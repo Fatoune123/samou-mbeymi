@@ -1,0 +1,27 @@
+{% extends 'pertes/base.html' %}
+{% block title %}Localisation — Samou Mbeymi{% endblock %}
+{% block content %}
+<main class="wrap page-section">
+  <div class="page-head"><div><span class="eyebrow">GÉOLOCALISATION</span><h1>Ma localisation agricole</h1><p class="muted">Enregistrez la position de votre exploitation pour personnaliser le pilotage et faciliter l'accès aux stockages proches.</p></div><a class="btn btn-outline" href="{% url 'liste_stockages' %}">Voir les stockages</a></div>
+  <section class="location-grid">
+    <div class="map-card"><div id="map"></div><div class="map-actions"><button id="locate-btn" class="btn btn-primary" type="button">📍 Utiliser ma position</button><button id="save-btn" class="btn btn-accent" type="button" disabled>💾 Enregistrer la position</button></div><p id="location-status" class="muted">Position actuelle : {% if agriculteur.latitude and agriculteur.longitude %}{{ agriculteur.latitude }}, {{ agriculteur.longitude }}{% else %}non enregistrée{% endif %}</p></div>
+    <aside class="location-info"><span class="ai-badge">LOCALISATION INTELLIGENTE</span><h2>{{ agriculteur.nom_exploitation|default:'Mon exploitation' }}</h2><p><strong>Région :</strong> {{ agriculteur.get_region_display }}</p><p><strong>Coordonnées :</strong> <span id="coords">{% if agriculteur.latitude and agriculteur.longitude %}{{ agriculteur.latitude }}, {{ agriculteur.longitude }}{% else %}Non enregistrées{% endif %}</span></p><div id="open-map-wrap">{% if agriculteur.latitude and agriculteur.longitude %}<a class="btn btn-soft" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat={{ agriculteur.latitude }}&mlon={{ agriculteur.longitude }}#map=15/{{ agriculteur.latitude }}/{{ agriculteur.longitude }}">🗺️ Ouvrir sur OpenStreetMap ↗</a>{% endif %}</div><div class="location-benefits"><div>📦 Stockages à proximité</div><div>📊 Analyse par région</div><div>📍 Traçabilité de l'exploitation</div></div></aside>
+  </section>
+</main>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(() => {
+ const existing={% if agriculteur.latitude and agriculteur.longitude %}[{{ agriculteur.latitude }},{{ agriculteur.longitude }}]{% else %}[14.7167,-17.4677]{% endif %};
+ let selected={% if agriculteur.latitude and agriculteur.longitude %}existing{% else %}null{% endif %};
+ const map=L.map('map').setView(existing,{% if agriculteur.latitude %}13{% else %}6{% endif %});
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(map);
+ let marker={% if agriculteur.latitude and agriculteur.longitude %}L.marker(existing).addTo(map).bindPopup('Votre exploitation').openPopup(){% else %}null{% endif %};
+ const status=document.getElementById('location-status'), save=document.getElementById('save-btn'), coords=document.getElementById('coords'), csrf='{{ csrf_token }}';
+ function selectPoint(lat,lng,label='Nouvelle position'){selected=[lat,lng];map.setView(selected,15);if(marker)map.removeLayer(marker);marker=L.marker(selected).addTo(map).bindPopup(label).openPopup();coords.textContent=lat.toFixed(6)+' , '+lng.toFixed(6);status.textContent='Position sélectionnée. Cliquez sur « Enregistrer la position ». ';save.disabled=false;}
+ document.getElementById('locate-btn').onclick=()=>{status.textContent='Recherche de votre position…';if(!navigator.geolocation){status.textContent='Géolocalisation indisponible. Cliquez directement sur la carte pour choisir un point.';return;}navigator.geolocation.getCurrentPosition(p=>selectPoint(p.coords.latitude,p.coords.longitude,'Ma position GPS'),e=>{status.textContent='GPS indisponible ('+e.message+'). Vous pouvez cliquer sur la carte pour choisir votre exploitation.';},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});};
+ map.on('click',e=>selectPoint(e.latlng.lat,e.latlng.lng,'Position choisie sur la carte'));
+ save.onclick=async()=>{if(!selected)return;save.disabled=true;status.textContent='Enregistrement…';try{const r=await fetch('{% url "enregistrer_localisation" %}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},body:JSON.stringify({latitude:selected[0],longitude:selected[1],nom:'Exploitation agricole'})});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.detail||'Enregistrement refusé');status.textContent='✓ Position enregistrée avec succès.';const url=`https://www.openstreetmap.org/?mlat=${selected[0]}&mlon=${selected[1]}#map=15/${selected[0]}/${selected[1]}`;document.getElementById('open-map-wrap').innerHTML=`<a class="btn btn-soft" target="_blank" rel="noopener" href="${url}">🗺️ Ouvrir sur OpenStreetMap ↗</a>`;}catch(e){status.textContent='Erreur : '+e.message;}finally{save.disabled=false;}};
+ setTimeout(()=>map.invalidateSize(),250);
+})();
+</script>
+{% endblock %}

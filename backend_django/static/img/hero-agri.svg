@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#cce9dc"/><stop offset="1" stop-color="#f7f2df"/></linearGradient>
+ <linearGradient id="field" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2e7758"/><stop offset="1" stop-color="#174b3b"/></linearGradient>
+</defs>
+<rect width="1200" height="620" rx="36" fill="url(#sky)"/>
+<circle cx="950" cy="120" r="58" fill="#f2b84b" opacity=".95"/>
+<path d="M0 365 C180 280 300 330 470 300 C650 268 780 340 1200 245 V620 H0Z" fill="#5f9d70"/>
+<path d="M0 420 C220 340 390 405 570 360 C790 305 920 390 1200 300 V620 H0Z" fill="url(#field)"/>
+<path d="M0 520 C250 440 430 520 650 455 C860 392 1030 475 1200 410" fill="none" stroke="#83b45f" stroke-width="24" opacity=".75"/>
+<path d="M80 490 C260 420 400 500 560 440 C730 375 850 470 1110 390" fill="none" stroke="#d2a84f" stroke-width="12" opacity=".8"/>
+<!-- tree --> <path d="M180 360v-110" stroke="#5a3b24" stroke-width="20"/><circle cx="180" cy="210" r="62" fill="#2d7654"/><circle cx="130" cy="235" r="42" fill="#397f59"/><circle cx="225" cy="235" r="45" fill="#397f59"/>
+<!-- farmer --> <circle cx="650" cy="250" r="28" fill="#8b5a3c"/><path d="M615 240q35-45 70 0" fill="#d99d57"/><path d="M615 280 Q650 260 685 280 L710 390 L590 390Z" fill="#f1b84b"/><path d="M610 390l-35 100M685 390l35 100" stroke="#263a31" stroke-width="24" stroke-linecap="round"/><path d="M590 300l-90 80M690 300l85 90" stroke="#8b5a3c" stroke-width="18" stroke-linecap="round"/>
+<!-- basket --> <path d="M755 385 q45 5 70 55 l-100 0q5-45 30-55Z" fill="#b8793e"/><path d="M735 405l70 0" stroke="#e6bd70" stroke-width="8"/>
+<!-- crops --> <g stroke="#b6d477" stroke-width="7" stroke-linecap="round"><path d="M360 540l0-95m0 35l-28-18m28 35l30-20"/><path d="M430 520l0-105m0 35l-30-20m30 42l32-24"/><path d="M500 540l0-100m0 30l-30-20m30 45l35-25"/></g>
+<text x="70" y="95" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#174b3b">AGRICULTURE • DONNÉES • IA</text>
+<text x="70" y="130" font-family="Arial, sans-serif" font-size="17" fill="#426657">Prévenir les pertes, mieux stocker, mieux décider.</text>
+</svg>

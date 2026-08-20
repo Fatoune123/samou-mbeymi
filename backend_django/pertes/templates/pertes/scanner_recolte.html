@@ -1,0 +1,85 @@
+{% extends 'pertes/base.html' %}
+{% block title %}Scanner IA — Samou Mbeymi{% endblock %}
+{% block content %}
+<main class="wrap page-section">
+  <div class="page-head"><div><span class="eyebrow">VISION PAR ORDINATEUR</span><h1>Scanner IA</h1><p class="muted">Analysez une photo de votre récolte pour obtenir un signal préventif.</p></div></div>
+  {% if recoltes %}
+  <div class="scanner">
+    <section class="scanner-preview">
+      <div>
+        <div class="scan-icon">◉</div><h2 style="color:#fff">Inspection visuelle</h2>
+        <p id="camera-help">Autorisez la caméra, sélectionnez une récolte puis capturez une image.</p>
+        <button id="start-camera" class="btn btn-accent" type="button">📷 Démarrer la caméra</button>
+        <button id="choose-photo" class="btn btn-soft" type="button" style="margin-top:10px">🖼️ Choisir une photo</button>
+        <input id="photo-input" type="file" accept="image/*" capture="environment" hidden>
+        <p id="camera-status" style="color:#fff;opacity:.9;margin-top:14px"></p>
+      </div>
+    </section>
+    <section class="result-card">
+      <label for="recolte-select" style="font-size:11px;font-weight:800">Récolte concernée</label>
+      <select id="recolte-select" style="width:100%;padding:12px;border:1px solid #d9e3dd;border-radius:12px;margin:7px 0 15px">
+        <option value="">Choisir une récolte</option>
+        {% for r in recoltes %}<option value="{{ r.pk }}">{{ r.culture.nom }} · {{ r.quantite_kg }} kg · {{ r.date_recolte|date:'d/m/Y' }}</option>{% endfor %}
+      </select>
+      <video id="video" autoplay playsinline muted style="width:100%;min-height:250px;background:#0d241c;border-radius:16px;object-fit:cover"></video>
+      <img id="photo-preview" alt="Aperçu de la photo" style="display:none;width:100%;min-height:250px;max-height:420px;background:#0d241c;border-radius:16px;object-fit:contain">
+      <canvas id="canvas" style="display:none"></canvas>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px">
+        <button id="capture-btn" class="btn btn-primary" type="button" disabled>📸 Capturer</button>
+        <button id="analyze-btn" class="btn btn-soft" type="button" disabled>✨ Analyser</button>
+      </div>
+      <p id="loading" class="muted" style="display:none;text-align:center">Analyse en cours…</p>
+      <div id="results" style="display:none;margin-top:18px">
+        <div class="alert alert-info"><strong id="result-title"></strong><br><span id="result-message"></span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="report-stat"><span>Zones ternies</span><strong id="result-rate">0%</strong></div><div class="report-stat"><span>Quantité potentiellement touchée</span><strong id="result-kg">0 kg</strong></div></div>
+        <p class="muted" style="font-size:10px;margin-top:12px">Analyse indicative : confirmez toujours le résultat par une observation réelle.</p>
+      </div>
+    </section>
+  </div>
+  {% else %}
+  <div class="panel empty-state"><div class="mark">📷</div><h3>Aucune récolte disponible</h3><p>Enregistrez d'abord une récolte avant de lancer une analyse.</p><a class="btn btn-primary" href="{% url 'ajouter_recolte' %}">Ajouter une récolte</a></div>
+  {% endif %}
+</main>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const video=$('video'), canvas=$('canvas'), select=$('recolte-select'), start=$('start-camera'), choose=$('choose-photo'), fileInput=$('photo-input'), capture=$('capture-btn'), analyze=$('analyze-btn'), status=$('camera-status'), preview=$('photo-preview'), loading=$('loading'), results=$('results');
+  let stream=null, imageData=null;
+  const setStatus = msg => { if(status) status.textContent=msg; };
+  const stopCamera=()=>{ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} };
+  async function startCamera(){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ setStatus('Caméra non disponible dans ce navigateur. Utilisez « Choisir une photo ».'); return; }
+    try {
+      stopCamera();
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+      video.srcObject=stream; video.style.display='block'; preview.style.display='none';
+      await video.play(); capture.disabled=false; setStatus('Caméra active. Choisissez une récolte puis appuyez sur Capturer.'); start.textContent='🔄 Redémarrer la caméra';
+    } catch(e){ setStatus('Accès caméra refusé ou indisponible. Autorisez la caméra dans le navigateur ou utilisez « Choisir une photo ».'); console.error(e); }
+  }
+  start?.addEventListener('click', startCamera);
+  choose?.addEventListener('click', ()=>fileInput.click());
+  fileInput?.addEventListener('change', e=>{
+    const file=e.target.files?.[0]; if(!file) return;
+    if(!file.type.startsWith('image/')){alert('Veuillez sélectionner une image.');return;}
+    const reader=new FileReader(); reader.onload=()=>{ imageData=reader.result; preview.src=imageData; preview.style.display='block'; video.style.display='none'; stopCamera(); analyze.disabled=!select.value; capture.disabled=true; setStatus('Photo sélectionnée. Choisissez une récolte puis cliquez sur Analyser.'); }; reader.readAsDataURL(file);
+  });
+  select?.addEventListener('change',()=>{ analyze.disabled=!select.value || !imageData; });
+  capture?.addEventListener('click',()=>{
+    if(!select.value){alert('Sélectionnez une récolte avant de capturer.');return;}
+    if(!video.videoWidth){setStatus('La caméra n’est pas prête. Cliquez sur Démarrer la caméra.');return;}
+    canvas.width=video.videoWidth; canvas.height=video.videoHeight; canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height); imageData=canvas.toDataURL('image/jpeg',.82); preview.src=imageData; preview.style.display='block'; video.style.display='none'; analyze.disabled=false; setStatus('Capture réussie. Cliquez sur Analyser.');
+  });
+  analyze?.addEventListener('click',async()=>{
+    if(!select.value){alert('Sélectionnez une récolte.');return;}
+    if(!imageData){alert('Prenez une photo ou choisissez une image.');return;}
+    loading.style.display='block'; analyze.disabled=true;
+    try{
+      const r=await fetch('{% url "analyser_recolte_api" %}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recolte_id:Number(select.value),image:imageData})});
+      const d=await r.json(); if(!r.ok) throw new Error(d.error||d.detail||'Erreur pendant l’analyse');
+      $('result-title').textContent=d.categorie==='bon_etat'?'Bon état détecté':d.categorie==='a_surveiller'?'À surveiller':'Détérioration probable'; $('result-message').textContent=d.message||''; $('result-rate').textContent=(d.taux_zones_ternies||0)+'%'; $('result-kg').textContent=(d.quantite_estimee_kg||0)+' kg'; results.style.display='block'; setStatus('Analyse terminée. Consultez le résultat ci-dessous.');
+    }catch(e){alert('Analyse impossible : '+e.message); setStatus('Une erreur est survenue. Vous pouvez réessayer.');}finally{loading.style.display='none'; analyze.disabled=!select.value || !imageData;}
+  });
+  window.addEventListener('beforeunload',stopCamera);
+})();
+</script>
+{% endblock %}
