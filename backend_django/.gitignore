@@ -1,0 +1,7 @@
+db.sqlite3
+db_sqlite_backup.sqlite3
+data_sqlite.json
+media/
+.env
+venv/
+__pycache__/
