@@ -8,3 +8,36 @@ build/
 .flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
+
+# Secrets et environnements locaux
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+media/
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+
+# Secrets et environnements locaux
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+media/
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+echo # Fichiers locaux Android et IDEecho **/.gradle/echo **/.kotlin/echo **/local.propertiesecho **/.idea/echo **/*.iml

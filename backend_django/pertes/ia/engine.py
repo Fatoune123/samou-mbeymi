@@ -1,74 +1,199 @@
-"""Moteur Machine Learning de Samou Mbeymi.
+"""Prédiction expérimentale du risque de pertes avec Random Forest.
 
-Le modèle Random Forest estime le niveau de risque post-récolte.
-Le dataset d'entraînement combine un socle synthétique et, lorsqu'ils existent,
-des exemples issus des données réelles de l'application. Les données réelles
-sont étiquetées à partir du taux de perte observé sur chaque récolte.
+Les exemples proviennent exclusivement des récoltes réelles enregistrées.
+Avec un petit échantillon, les sorties sont indicatives et ne constituent pas
+une mesure de performance généralisable.
 """
-import os, joblib, numpy as np
+import os
+import joblib
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 from sklearn.preprocessing import LabelEncoder
-from .dataset import generer_dataset, CULTURES, REGIONS
 
-MODELE_DIR=os.path.join(os.path.dirname(__file__),'modeles'); MODELE_PATH=os.path.join(MODELE_DIR,'modele_risque.pkl')
+from .dataset import CULTURES, REGIONS
 
-def _encoders(): return LabelEncoder().fit(CULTURES), LabelEncoder().fit(REGIONS)
+MODELE_DIR = os.path.join(os.path.dirname(__file__), "modeles")
+MODELE_PATH = os.path.join(MODELE_DIR, "modele_risque_random_forest.pkl")
+MIN_EXEMPLES_REELS = 4
+
+
+def _encoders(exemples):
+    cultures = sorted(set(CULTURES + [e["culture"] for e in exemples] + ["Autre"]))
+    regions = sorted(set(REGIONS + [e["region"] for e in exemples]))
+    return LabelEncoder().fit(cultures), LabelEncoder().fit(regions)
+
 
 def _vectoriser(exemples, ce, re):
-    return np.column_stack([ce.transform([e['culture'] for e in exemples]),re.transform([e['region'] for e in exemples]),[e['mois'] for e in exemples],[e['quantite_kg'] for e in exemples],[e['stockage_formel'] for e in exemples]])
+    cultures = [e["culture"] if e["culture"] in ce.classes_ else "Autre" for e in exemples]
+    regions = [e["region"] if e["region"] in re.classes_ else REGIONS[0] for e in exemples]
+    return np.column_stack([
+        ce.transform(cultures), re.transform(regions),
+        [e["mois"] for e in exemples], [e["quantite_kg"] for e in exemples],
+        [e["stockage_formel"] for e in exemples],
+    ])
+
 
 def _reelles():
-    try:
-        from ..models import Recolte
-        out=[]
-        for r in Recolte.objects.select_related('agriculteur','culture').all():
-            q=float(r.quantite_kg); perte=float(r.total_pertes_kg); taux=(perte/q*100) if q else 0
-            risque='eleve' if taux>12 else ('moyen' if taux>5 else 'faible')
-            lieu=(r.lieu_stockage or '').lower(); formel=int(any(k in lieu for k in ['silo','entrepôt','entrepot','magasin','frigo','chambre froide','hangar']))
-            culture=r.culture.nom if r.culture.nom in CULTURES else CULTURES[0]
-            out.append({'culture':culture,'region':r.agriculteur.region if r.agriculteur.region in REGIONS else REGIONS[0],'mois':r.date_recolte.month,'quantite_kg':q,'stockage_formel':formel,'risque':risque})
-        return out
-    except Exception:
-        return []
+    from ..models import Recolte
+    exemples = []
+    for r in Recolte.objects.select_related("agriculteur", "culture").all():
+        quantite = float(r.quantite_kg or 0)
+        if quantite <= 0:
+            continue
+        perte = float(r.total_pertes_kg or 0)
+        taux = perte / quantite * 100
+        risque = "eleve" if taux > 12 else ("moyen" if taux > 5 else "faible")
+        lieu = (r.lieu_stockage or "").lower()
+        formel = int(any(k in lieu for k in [
+            "silo", "entrepôt", "entrepot", "magasin", "frigo",
+            "chambre froide", "hangar"
+        ]))
+        exemples.append({
+            "culture": r.culture.nom,
+            "region": r.agriculteur.region,
+            "mois": r.date_recolte.month,
+            "quantite_kg": quantite,
+            "stockage_formel": formel,
+            "risque": risque,
+        })
+    return exemples
 
-def entrainer(n_exemples=3000, inclure_reel=True):
-    os.makedirs(MODELE_DIR,exist_ok=True)
-    synth=generer_dataset(n=n_exemples)
-    reel=_reelles() if inclure_reel else []
-    exemples=synth+reel
-    ce,re=_encoders(); X=_vectoriser(exemples,ce,re); y=[e['risque'] for e in exemples]
-    Xtr,Xte,ytr,yte=train_test_split(X,y,test_size=.2,random_state=42,stratify=y)
-    modele=RandomForestClassifier(n_estimators=300,max_depth=10,min_samples_leaf=3,class_weight='balanced',random_state=42,n_jobs=-1)
-    modele.fit(Xtr,ytr); pred=modele.predict(Xte)
-    metrics={'accuracy':float(accuracy_score(yte,pred)),'precision':float(precision_score(yte,pred,average='weighted',zero_division=0)),'recall':float(recall_score(yte,pred,average='weighted',zero_division=0)),'f1':float(f1_score(yte,pred,average='weighted',zero_division=0))}
-    importance=dict(zip(['culture','region','mois','quantite_kg','stockage_formel'],[round(float(x),4) for x in modele.feature_importances_]))
-    joblib.dump({'modele':modele,'culture_encoder':ce,'region_encoder':re,'metrics':metrics,'precision_test':metrics['accuracy'],'importance':importance,'n_synthetiques':n_exemples,'n_reelles':len(reel)},MODELE_PATH)
-    return {'metrics':metrics,'importance':importance,'n_synthetiques':n_exemples,'n_reelles':len(reel),'n_total':len(exemples)}
+
+def statistiques_donnees():
+    exemples = _reelles()
+    repartition = {"faible": 0, "moyen": 0, "eleve": 0}
+    for e in exemples:
+        repartition[e["risque"]] += 1
+    classes = {e["risque"] for e in exemples}
+    return {
+        "exemples_reels": len(exemples),
+        "minimum_requis": MIN_EXEMPLES_REELS,
+        "repartition": repartition,
+        "entrainement_possible": len(exemples) >= MIN_EXEMPLES_REELS and len(classes) >= 2,
+    }
+
+
+def entrainer():
+    exemples = _reelles()
+    repartition = {"faible": 0, "moyen": 0, "eleve": 0}
+    for e in exemples:
+        repartition[e["risque"]] += 1
+    classes_presentes = sorted({e["risque"] for e in exemples})
+    if len(exemples) < MIN_EXEMPLES_REELS:
+        raise ValueError(
+            f"Données insuffisantes : {len(exemples)} récoltes réelles. "
+            f"Au moins {MIN_EXEMPLES_REELS} sont nécessaires. Aucun modèle n'a été entraîné."
+        )
+    if len(classes_presentes) < 2:
+        raise ValueError("Au moins deux niveaux de risque doivent être représentés dans les récoltes réelles.")
+
+    ce, re = _encoders(exemples)
+    X = _vectoriser(exemples, ce, re)
+    labels = ["faible", "moyen", "eleve"]
+    y = np.array([labels.index(e["risque"]) for e in exemples], dtype=int)
+
+    model = RandomForestClassifier(
+        n_estimators=200,
+        max_depth=4,
+        min_samples_leaf=1,
+        class_weight="balanced",
+        random_state=42,
+        n_jobs=1,
+    )
+    model.fit(X, y)
+    importance = dict(zip(
+        ["culture", "region", "mois", "quantite_kg", "stockage_formel"],
+        [round(float(v), 4) for v in model.feature_importances_]
+    ))
+    os.makedirs(MODELE_DIR, exist_ok=True)
+    joblib.dump({
+        "modele": model,
+        "culture_encoder": ce,
+        "region_encoder": re,
+        "importance": importance,
+        "n_reelles": len(exemples),
+        "algorithme": "RandomForest",
+        "classes": [labels[int(v)] for v in model.classes_],
+        "repartition": repartition,
+        "evaluation": "non_evaluee_echantillon_insuffisant",
+    }, MODELE_PATH)
+    return {
+        "importance": importance,
+        "n_reelles": len(exemples),
+        "algorithme": "Random Forest",
+        "repartition": repartition,
+        "evaluation": "Entraînement sur données disponibles ; performance non validée indépendamment.",
+    }
+
 
 def _charger():
-    if not os.path.exists(MODELE_PATH): entrainer()
-    return joblib.load(MODELE_PATH)
+    if not os.path.exists(MODELE_PATH):
+        return None
+    try:
+        data = joblib.load(MODELE_PATH)
+        if data.get("algorithme") != "RandomForest" or data.get("n_reelles", 0) < MIN_EXEMPLES_REELS:
+            return None
+        return data
+    except Exception:
+        return None
 
-def predire_risque(culture_nom, region, mois, quantite_kg, lieu_stockage=''):
-    data=_charger(); m=data['modele']; ce=data['culture_encoder']; re=data['region_encoder']
-    culture=culture_nom if culture_nom in ce.classes_ else ce.classes_[0]; reg=region if region in re.classes_ else re.classes_[0]
-    formel=int(any(k in (lieu_stockage or '').lower() for k in ['silo','entrepôt','entrepot','magasin','frigo','chambre froide','hangar']))
-    X=np.array([[ce.transform([culture])[0],re.transform([reg])[0],int(mois),float(quantite_kg),formel]])
-    proba=m.predict_proba(X)[0]; classes=list(m.classes_); risque=classes[int(np.argmax(proba))]
-    facteurs=[]
-    if int(mois) in (6,7,8,9,10): facteurs.append("Saison des pluies : l'humidité peut accélérer la détérioration.")
-    if not formel: facteurs.append("Le lieu indiqué ne ressemble pas à un stockage formel.")
-    if float(quantite_kg)>1500: facteurs.append("Volume important : renforcez le contrôle et la ventilation.")
-    if not facteurs: facteurs.append("Aucun facteur aggravant majeur détecté par les variables disponibles.")
-    return {'risque':risque,'risque_affiche':{'faible':'Faible','moyen':'Moyen','eleve':'Élevé'}[risque],'probabilites':{c:round(float(p),3) for c,p in zip(classes,proba)},'facteurs':facteurs,'recommandation':('Renforcez immédiatement le stockage et le suivi.' if risque=='eleve' else 'Planifiez un contrôle préventif.' if risque=='moyen' else 'Continuez le suivi préventif.'),'modele':{'type':'Random Forest','donnees_reelles':data.get('n_reelles',0),'donnees_synthetiques':data.get('n_synthetiques',0)}}
 
-def analyser_photo(image_path):
-    from PIL import Image
-    img=Image.open(image_path).convert('RGB'); img.thumbnail((300,300)); pixels=np.asarray(img).reshape(-1,3).astype(float); r,g,b=pixels[:,0],pixels[:,1],pixels[:,2]; lum=(r+g+b)/3
-    ternis=(((r>g)&(g>b)&(lum<120))|(lum<60)); taux=float(ternis.sum())/len(pixels)
-    if taux<.12: cat,msg='bon_etat','Aucun signe visuel majeur de détérioration détecté.'
-    elif taux<.30: cat,msg='a_surveiller','Quelques zones ternies détectées : vérification recommandée.'
-    else: cat,msg='deterioration_probable','Proportion importante de zones ternies : inspection recommandée.'
-    return {'taux_zones_ternies':round(taux*100,1),'categorie':cat,'message':msg,'limite':'Analyse colorimétrique indicative, pas un diagnostic agronomique certifié.'}
+def predire_risque(culture_nom, region, mois, quantite_kg, lieu_stockage=""):
+    data = _charger()
+    if data is None:
+        raise RuntimeError(
+            "Le modèle Random Forest n'est pas encore entraîné. "
+            "Vérifiez les données réelles puis lancez entrainer_modele_ia."
+        )
+    model = data["modele"]
+    ce, re = data["culture_encoder"], data["region_encoder"]
+    culture = culture_nom if culture_nom in ce.classes_ else "Autre"
+    region = region if region in re.classes_ else REGIONS[0]
+    lieu = (lieu_stockage or "").lower()
+    formel = int(any(k in lieu for k in [
+        "silo", "entrepôt", "entrepot", "magasin", "frigo",
+        "chambre froide", "hangar"
+    ]))
+    X = _vectoriser([{
+        "culture": culture, "region": region, "mois": int(mois),
+        "quantite_kg": float(quantite_kg), "stockage_formel": formel,
+    }], ce, re)
+    probabilities = model.predict_proba(X)[0]
+    model_labels = [data["classes"][i] for i in range(len(data["classes"]))]
+    # RandomForest.classes_ garde les identifiants numériques de risque.
+    labels_by_id = {0: "faible", 1: "moyen", 2: "eleve"}
+    model_labels = [labels_by_id[int(v)] for v in model.classes_]
+    index = int(np.argmax(probabilities))
+    risk = model_labels[index]
+    all_probabilities = {"faible": 0.0, "moyen": 0.0, "eleve": 0.0}
+    for label, value in zip(model_labels, probabilities):
+        all_probabilities[label] = round(float(value), 3)
+    factors = []
+    if int(mois) in (6, 7, 8, 9, 10):
+        factors.append("La période correspond à la saison des pluies : surveillez l'humidité.")
+    if not formel:
+        factors.append("Le lieu renseigné n'est pas reconnu comme un stockage formel.")
+    if float(quantite_kg) > 1500:
+        factors.append("Le volume est important : renforcez les contrôles du lot.")
+    if not factors:
+        factors.append("Aucun facteur de vigilance simple n'a été détecté parmi les variables saisies.")
+    return {
+        "risque": risk,
+        "risque_affiche": {"faible": "Faible", "moyen": "Moyen", "eleve": "Élevé"}[risk],
+        "probabilites": all_probabilities,
+        "facteurs": factors,
+        "recommandation": (
+            "Renforcez immédiatement le stockage et le suivi du lot." if risk == "eleve"
+            else "Planifiez un contrôle préventif du lot." if risk == "moyen"
+            else "Continuez le suivi préventif du lot."
+        ),
+        "modele": {
+            "type": "Random Forest",
+            "donnees_reelles": data["n_reelles"],
+            "donnees_synthetiques": 0,
+            "evaluation": "Résultat expérimental : petit échantillon, validation indépendante non réalisée.",
+        },
+    }
+
+
+from .vision import analyser_photo  # compatibilité historique

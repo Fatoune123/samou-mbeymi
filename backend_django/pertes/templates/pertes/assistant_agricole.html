@@ -1,0 +1,370 @@
+{% extends 'pertes/base.html' %}
+{% block title %}Assistant agricole — SAMOU MBEYMI{% endblock %}
+{% block content %}
+<style>
+.assistant-wrap{max-width:1120px;margin:28px auto;padding:clamp(14px,3vw,30px);color:#173b30}
+.assistant-head{position:relative;overflow:hidden;background:radial-gradient(circle at 90% 10%,rgba(245,190,75,.28),transparent 30%),linear-gradient(130deg,#073f32,#12634a 62%,#1d7654);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:26px;padding:clamp(24px,4vw,42px);box-shadow:0 22px 55px rgba(8,55,42,.18)}
+.assistant-head:after{content:"";position:absolute;width:240px;height:240px;border:1px solid rgba(255,255,255,.14);border-radius:50%;right:-70px;bottom:-145px;box-shadow:0 0 0 24px rgba(255,255,255,.035),0 0 0 48px rgba(255,255,255,.025)}
+.assistant-head h2{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-.04em;margin:0 0 8px}.assistant-head p{max-width:700px;color:#d8eee4;margin:0;line-height:1.7}
+.assistant-grid{display:grid;grid-template-columns:minmax(260px,.82fr) minmax(0,1.5fr);gap:18px;margin-top:18px}
+.assistant-panel{background:rgba(255,255,255,.94);border:1px solid #dce9e1;border-radius:22px;padding:22px;box-shadow:0 12px 35px rgba(16,59,43,.07);min-width:0}
+.assistant-panel strong{color:#174c3a}.assistant-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0 20px}.assistant-modes button{border:1px solid #d5e2da;border-radius:12px;padding:12px 10px;background:#f8fbf9;color:#244b3d;font-weight:750;transition:.2s}.assistant-modes button:hover{border-color:#1d7654;transform:translateY(-1px)}.assistant-modes button.active{background:#10543f;color:#fff;border-color:#10543f;box-shadow:0 6px 16px rgba(16,84,63,.18)}
+.assistant-panel select,.assistant-controls textarea{width:100%;border:1px solid #d5e2da;border-radius:13px;padding:13px 14px;background:#fbfdfb;color:#183d30;outline:none}.assistant-panel select:focus,.assistant-controls textarea:focus{border-color:#27815e;box-shadow:0 0 0 3px rgba(39,129,94,.12)}
+.assistant-chat{height:min(58vh,520px);min-height:300px;overflow:auto;padding:18px;background:linear-gradient(180deg,#f7faf8,#f1f7f3);border:1px solid #e2ece5;border-radius:17px}.assistant-msg{max-width:86%;padding:13px 16px;border-radius:17px;margin:10px 0;white-space:pre-wrap;line-height:1.65;box-shadow:0 3px 12px rgba(20,55,40,.04)}.assistant-msg.user{margin-left:auto;background:#10543f;color:#fff;border-bottom-right-radius:5px}.assistant-msg.bot{margin-right:auto;background:#fff;color:#234638;border:1px solid #e1ebe4;border-bottom-left-radius:5px}
+.assistant-controls{display:flex;gap:10px;margin-top:14px;align-items:stretch}.assistant-controls textarea{flex:1;min-height:58px;max-height:150px;resize:vertical}.assistant-button{border:0;border-radius:13px;padding:13px 18px;background:linear-gradient(135deg,#10543f,#1b7655);color:#fff;font-weight:750;cursor:pointer;box-shadow:0 7px 16px rgba(16,84,63,.14);transition:.2s}.assistant-button:hover{transform:translateY(-1px);filter:brightness(1.05)}.assistant-button:disabled{opacity:.55;cursor:not-allowed;transform:none}.assistant-status{font-size:.9rem;color:#63796e;margin-top:10px;line-height:1.55}.assistant-status.error{color:#b42318}.assistant-language-label{display:block;margin-bottom:8px}.assistant-tip{background:#f2f8f4;border:1px solid #e0ece3;border-radius:13px;padding:12px;color:#567064;font-size:.88rem;line-height:1.55;margin-top:16px}
+@media(max-width:760px){.assistant-grid{grid-template-columns:1fr}.assistant-chat{height:48vh;min-height:260px}.assistant-controls{flex-direction:column}.assistant-controls .assistant-button{width:100%}.assistant-msg{max-width:95%}}
+</style>
+<form id="csrf-holder" hidden>{% csrf_token %}</form>\n<div class="assistant-wrap">
+  <div class="assistant-head">
+    <h2>Assistant agricole SAMOU MBEYMI</h2>
+    <p>Posez vos questions sur les cultures, les récoltes, la conservation et les pertes agricoles.</p>
+  </div>
+  <div class="assistant-grid"><section class="assistant-panel">
+    <strong>1. Choisissez votre mode</strong>
+    <div class="assistant-modes" role="group" aria-label="Mode d’utilisation">
+      <button type="button" data-mode="ecrit" class="active">Écrit</button>
+      <button type="button" data-mode="vocal">Vocal</button>
+      <button type="button" data-mode="mixte">Mixte</button>
+      <button type="button" data-mode="integral">Entièrement vocal</button>
+    </div>
+    <label for="assistant-language"><strong>2. Langue</strong></label>
+    <select id="assistant-language" class="form-select" style="max-width:420px;margin-top:6px">
+      <option value="fr-FR">Français</option>
+      <option value="wo-SN">Wolof</option>
+      <option value="ff">Pulaar</option>
+      <option value="srr">Sérère</option>
+      <option value="dyo">Joola</option>
+      <option value="mnk">Mandinka</option>
+      <option value="snk">Soninké</option>
+    </select>
+    <label id="auto-speak-wrap" style="display:none;margin-top:12px">
+      <input id="auto-speak" type="checkbox" checked> Lire automatiquement les réponses
+    </label>
+    <p id="mode-help" class="assistant-status">Saisissez votre question puis envoyez-la.</p>
+    <div class="assistant-tip">Pour les langues nationales, l'audio est transcrit côté serveur. Parlez distinctement, dans un endroit calme, et attendez la fin de l'enregistrement avant l'envoi.</div>
+  </section>
+  <section class="assistant-panel">
+    <div id="assistant-chat" class="assistant-chat" aria-live="polite">
+      <div class="assistant-msg bot">Bonjour. Je suis l’assistant agricole de SAMOU MBEYMI. Comment puis-je vous aider ?</div>
+    </div>
+    <div id="text-controls" class="assistant-controls">
+      <textarea id="assistant-question" placeholder="Écrivez votre question agricole…" aria-label="Votre question"></textarea>
+      <button id="send-question" class="assistant-button" type="button">Envoyer</button>
+    </div>
+    <div id="voice-controls" style="display:none;margin-top:12px">
+      <button id="voice-button" class="assistant-button" type="button">🎙️ Parler à l’assistant</button>
+      <button id="stop-speech" class="assistant-button" type="button" style="background:#64748b">Arrêter la lecture</button>
+      <p id="recognized-text" class="assistant-status"></p>
+    </div>
+    <p id="assistant-status" class="assistant-status" role="status"></p>
+  </section></div>
+  <p class="assistant-status">La reconnaissance vocale est traitée par le serveur pour les langues configurées. La lecture audio dépend des voix installées sur votre appareil.</p>
+</div>
+<script>
+(() => {
+  const apiUrl = '/api/ia/conseiller/';
+  const langSelect = document.getElementById('assistant-language');
+  const chat = document.getElementById('assistant-chat');
+  const question = document.getElementById('assistant-question');
+  const textControls = document.getElementById('text-controls');
+  const voiceControls = document.getElementById('voice-controls');
+  const statusEl = document.getElementById('assistant-status');
+  const recognizedEl = document.getElementById('recognized-text');
+  const voiceButton = document.getElementById('voice-button');
+  const autoSpeakWrap = document.getElementById('auto-speak-wrap');
+  const autoSpeak = document.getElementById('auto-speak');
+  const modeHelp = document.getElementById('mode-help');
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let mode = 'ecrit';
+  let recognition = null;
+  let recorder = null, recorderStream = null, recorderChunks = [], recorderTimer = null;
+  let busy = false;
+
+  const langNames = {
+    'fr-FR':'Français','wo-SN':'Wolof','ff':'Pulaar','srr':'Sérère',
+    'dyo':'Joola','mnk':'Mandinka','snk':'Soninké'
+  };
+
+  function addMessage(text, who) {
+    const node = document.createElement('div');
+    node.className = 'assistant-msg ' + who;
+    node.textContent = text;
+    chat.appendChild(node);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function setStatus(message) { statusEl.textContent = message || ''; }
+
+  function setMode(next) {
+    mode = next;
+    document.querySelectorAll('[data-mode]').forEach(btn =>
+      btn.classList.toggle('active', btn.dataset.mode === mode));
+    textControls.style.display = (mode === 'ecrit' || mode === 'mixte') ? 'flex' : 'none';
+    voiceControls.style.display = mode === 'ecrit' ? 'none' : 'block';
+    autoSpeakWrap.style.display = mode === 'mixte' ? 'block' : 'none';
+    const descriptions = {
+      ecrit:'Écrivez votre question. La réponse sera affichée en texte.',
+      vocal:'Parlez à l’assistant : sa réponse sera prononcée automatiquement si une voix compatible est installée.',
+      mixte:'Vous pouvez écrire ou parler, lire et écouter les réponses.',
+      integral:'Parlez et écoutez la réponse. La conversation continue à la voix si votre navigateur le permet.'
+    };
+    modeHelp.textContent = descriptions[mode];
+  }
+
+  document.querySelectorAll('[data-mode]').forEach(btn =>
+    btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+
+
+    async function transcribeLocalAudio(blob, langue, csrfToken) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) throw new Error("Traitement audio non pris en charge par ce navigateur.");
+        const ctx = new Ctx();
+        try {
+            const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
+            const rate = 16000;
+            const offline = new OfflineAudioContext(1, Math.ceil(decoded.duration * rate), rate);
+            const source = offline.createBufferSource(); source.buffer = decoded; source.connect(offline.destination); source.start(0);
+            const samples = (await offline.startRendering()).getChannelData(0);
+            const buffer = new ArrayBuffer(44 + samples.length * 2), view = new DataView(buffer);
+            const str = (o, v) => { for (let i=0;i<v.length;i++) view.setUint8(o+i,v.charCodeAt(i)); };
+            str(0,"RIFF"); view.setUint32(4,36+samples.length*2,true); str(8,"WAVE"); str(12,"fmt ");
+            view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true); view.setUint32(24,rate,true);
+            view.setUint32(28,rate*2,true); view.setUint16(32,2,true); view.setUint16(34,16,true); str(36,"data"); view.setUint32(40,samples.length*2,true);
+            for (let i=0;i<samples.length;i++){const v=Math.max(-1,Math.min(1,samples[i]));view.setInt16(44+i*2,v<0?v*32768:v*32767,true);}
+            const form=new FormData(); form.append("audio",new Blob([buffer],{type:"audio/wav"}),"question.wav"); form.append("langue",langue);
+            const response=await fetch("/api/ia/transcrire-audio/",{method:"POST",body:form,credentials:"same-origin",headers:{"X-CSRFToken":csrfToken||"","Accept":"application/json"}});
+            const data=await response.json(); if(!response.ok) throw new Error(data.detail||"Transcription audio impossible."); return data.transcription;
+        } finally { await ctx.close().catch(()=>{}); }
+    }
+
+
+  const LOCAL_LANGUAGES = new Set(['fr-FR','wo-SN','ff','srr','dyo','mnk','snk']);
+  async function startLocalRecording() {
+    if (recorder || busy) return;
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { setStatus("Enregistrement audio indisponible. Mettez Chrome à jour et autorisez le microphone."); return; }
+    try {
+      recorderStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); recorderChunks=[];
+      const mime=["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"].find(x=>MediaRecorder.isTypeSupported(x));
+      recorder=new MediaRecorder(recorderStream,mime?{mimeType:mime}:undefined);
+      recorder.ondataavailable=e=>{if(e.data?.size)recorderChunks.push(e.data);};
+      recorder.onstop=async()=>{
+        const blob=new Blob(recorderChunks,{type:recorder?.mimeType||"audio/webm"}); recorderStream?.getTracks().forEach(x=>x.stop()); recorderStream=null; recorder=null;
+        voiceButton.textContent="🎙️ Parler à l’assistant";
+        if(!blob.size){setStatus("Aucune parole enregistrée. Réessayez.");return;}
+        busy=true; voiceButton.disabled=true; setStatus("Reconnaissance de la langue locale en cours…");
+        try {const csrf=document.querySelector("#csrf-holder input[name=csrfmiddlewaretoken]")?.value||"";const transcript=await transcribeLocalAudio(blob,langSelect.value,csrf);question.value=transcript;recognizedEl.textContent="Question reconnue : "+transcript;busy=false;voiceButton.disabled=false;await send(transcript,true);}
+        catch(e){busy=false;voiceButton.disabled=false;setStatus(e.message||"La parole n'a pas pu être reconnue.");}
+      };
+      recorder.start(250); voiceButton.textContent="⏹ Terminer l’enregistrement"; setStatus("Microphone actif. Parlez, puis appuyez de nouveau pour terminer.");
+      recorderTimer=window.setTimeout(()=>{if(recorder?.state==="recording")recorder.stop();},20000);
+    } catch(e){recorderStream?.getTracks().forEach(x=>x.stop());recorderStream=null;setStatus("Microphone inaccessible : "+(e.message||"vérifiez les autorisations Chrome."));}
+  }
+
+  function startRecognition() {
+    if (LOCAL_LANGUAGES.has(langSelect.value)) { startLocalRecording(); return; }
+    if (!SpeechRecognition) {
+      setStatus('Ce navigateur ne fournit pas la reconnaissance vocale. Autorisez le microphone ou utilisez le mode écrit/mixte.');
+      return;
+    }
+    if (busy || recognition) return;
+    const activeRecognition = new SpeechRecognition();
+    recognition = activeRecognition;
+    const localeMap = {'ff':'ff-SN','srr':'srr-SN','dyo':'dyo-SN','mnk':'mnk-SN','snk':'snk-SN'};
+    activeRecognition.lang = localeMap[langSelect.value] || langSelect.value;
+    activeRecognition.interimResults = true;
+    activeRecognition.continuous = false;
+    activeRecognition.maxAlternatives = 1;
+    voiceButton.textContent = '⏹ Arrêter l’écoute';
+    voiceButton.disabled = false;
+    recognizedEl.textContent = 'Microphone actif : parlez clairement après le signal du navigateur…';
+    setStatus('En attente de votre parole.');
+    activeRecognition.onresult = event => {
+      let finalText = '';
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0]?.transcript || '';
+        if (event.results[i].isFinal) finalText += transcript;
+        else interim += transcript;
+      }
+      recognizedEl.textContent = finalText || interim || 'Je vous écoute…';
+      if (finalText.trim()) {
+        try { activeRecognition.stop(); } catch (_) {}
+        send(finalText, true);
+      }
+    };
+    activeRecognition.onerror = event => {
+      const messages = {
+        'not-allowed':'Accès au microphone refusé. Autorisez le microphone dans les paramètres du navigateur.',
+        'service-not-allowed':'Le service de reconnaissance vocale est bloqué par le navigateur.',
+        'no-speech':'Aucune parole détectée. Réessayez en parlant près du microphone.',
+        'audio-capture':'Aucun microphone détecté. Vérifiez le branchement et les autorisations.',
+        'network':'Le service vocal ne répond pas. Vérifiez votre connexion Internet.',
+        'language-not-supported':'La reconnaissance vocale de cette langue n’est pas prise en charge par le navigateur.'
+      };
+      setStatus(messages[event.error] || ('Erreur de reconnaissance vocale : ' + event.error));
+    };
+    activeRecognition.onend = () => {
+      if (recognition === activeRecognition) recognition = null;
+      voiceButton.textContent = '🎙️ Parler à l’assistant';
+      if (!recognizedEl.textContent || recognizedEl.textContent.startsWith('Microphone actif')) {
+        recognizedEl.textContent = 'Aucune question reconnue. Appuyez sur Parler et réessayez.';
+      }
+    };
+    try { activeRecognition.start(); }
+    catch (error) {
+      if (recognition === activeRecognition) recognition = null;
+      voiceButton.textContent = '🎙️ Parler à l’assistant';
+      setStatus('Impossible de démarrer le microphone : ' + (error.message || 'vérifiez les autorisations.'));
+    }
+  }
+
+  function loadVoices() {
+    return new Promise(resolve => {
+      if (!('speechSynthesis' in window)) return resolve([]);
+      let voices = window.speechSynthesis.getVoices();
+      if (voices.length) return resolve(voices);
+      const timer = window.setTimeout(() => resolve(window.speechSynthesis.getVoices()), 1200);
+      window.speechSynthesis.addEventListener?.('voiceschanged', () => {
+        window.clearTimeout(timer);
+        resolve(window.speechSynthesis.getVoices());
+      }, {once:true});
+    });
+  }
+
+  async function speak(text) {
+    if (!('speechSynthesis' in window)) {
+      setStatus('La lecture vocale n’est pas disponible dans ce navigateur. La réponse reste affichée.');
+      return;
+    }
+    const wanted = langSelect.value.toLowerCase();
+    const aliases = {
+      'fr-fr':['fr'], 'en-us':['en'], 'wo-sn':['wo'], 'ff':['ff'],
+      'srr':['srr'], 'dyo':['dyo'], 'mnk':['mnk'], 'snk':['snk']
+    };
+    const voices = await loadVoices();
+    const prefixes = [wanted, ...(aliases[wanted] || [])].map(x => x.toLowerCase());
+    const languageCode = wanted.split('-')[0];
+    // Accepte une voix régionale différente uniquement si le code de langue est identique.
+    const voice = voices.find(v => prefixes.includes(v.lang.toLowerCase())) ||
+      voices.find(v => prefixes.some(prefix => v.lang.toLowerCase().startsWith(prefix + '-'))) ||
+      voices.find(v => v.lang.toLowerCase().split(/[-_]/)[0] === languageCode);
+    if (!voice) {
+      setStatus('Aucune voix de synthèse installée pour ' + langNames[langSelect.value] + '. La réponse reste affichée dans cette langue ; aucune autre langue ne sera substituée.');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    return new Promise(resolve => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+      utterance.rate = 0.88;
+      utterance.onend = () => {
+        resolve();
+        if (mode === 'integral') {
+          window.setTimeout(() => {
+            if (!busy && mode === 'integral' && !recognition) startRecognition();
+          }, 450);
+        }
+      };
+      utterance.onerror = () => {
+        setStatus('La voix sélectionnée n’a pas pu lire la réponse. Le texte reste disponible.');
+        resolve();
+      };
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
+    function navigationCommand(text) {
+    const q = text.toLocaleLowerCase();
+    const explicit = ['ouvre ', 'ouvrir ', 'va à ', 'aller à ', 'affiche '].some(x => q.includes(x));
+    if (!explicit) return false;
+    if (q.includes('récolte') || q.includes('recolte')) location.href = '/recoltes/';
+    else if (q.includes('perte')) location.href = '/pertes/';
+    else if (q.includes('tableau de bord') || q.includes('accueil')) location.href = '/tableau-de-bord/';
+    else if (q.includes('scanner')) location.href = '/scanner/';
+    else return false;
+    return true;
+  }
+
+  async function send(text, fromVoice=false) {
+    const clean = (text || '').trim();
+    if (!clean || busy) return;
+    if (mode === 'integral' && navigationCommand(clean)) return;
+    busy = true;
+    addMessage(clean, 'user');
+    setStatus('L’assistant prépare une réponse…');
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest', 'X-CSRFToken': document.querySelector('#csrf-holder [name=csrfmiddlewaretoken]')?.value || ''},
+        body: JSON.stringify({question: clean, langue: langSelect.value})
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Erreur du service assistant.');
+      const answer = (data.answer || data.reponse || '').trim();
+      if (!answer) throw new Error('Aucune réponse reçue.');
+      addMessage(answer, 'bot');
+      setStatus(data.avertissement || '');
+      // Une réponse déclenchée par la voix doit toujours être prononcée,
+      // même si l'interface est passée en mode mixte ou écrit entre-temps.
+      if (fromVoice || mode === 'vocal' || mode === 'integral' || (mode === 'mixte' && autoSpeak.checked)) {
+        await speak(answer);
+      }
+    } catch (error) {
+      setStatus(error.message || 'Connexion au service impossible.');
+    } finally {
+      busy = false;
+      if (mode === 'integral') {
+        window.setTimeout(() => {
+          if (!recognition && mode === 'integral') startRecognition();
+        }, 500);
+      }
+    }
+  }
+
+  document.getElementById('send-question').addEventListener('click', () => {
+    const value = question.value;
+    question.value = '';
+    send(value);
+  });
+  question.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      document.getElementById('send-question').click();
+    }
+  });
+
+  voiceButton.addEventListener('click', () => {
+    if (LOCAL_LANGUAGES.has(langSelect.value)) { if (recorder?.state === 'recording') { window.clearTimeout(recorderTimer); recorder.stop(); } else startLocalRecording(); return; }
+    if (!SpeechRecognition) {
+      setStatus('La reconnaissance vocale n’est pas prise en charge par ce navigateur. Essayez un navigateur compatible ou utilisez le mode écrit/mixte.');
+      return;
+    }
+    if (recognition) {
+      recognition.stop();
+      recognition = null;
+      voiceButton.textContent = '🎙️ Parler à l’assistant';
+      return;
+    }
+    startRecognition();
+  });
+
+  document.getElementById('stop-speech').addEventListener('click', () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  });
+  langSelect.addEventListener('change', () => {
+    if (recorder?.state === 'recording') { try { recorder.stop(); } catch (_) {} }
+    if (recognition) {
+      const active = recognition;
+      recognition = null;
+      try { active.abort(); } catch (_) {}
+      voiceButton.textContent = '🎙️ Parler à l’assistant';
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    recognizedEl.textContent = '';
+    setStatus('Langue de réponse modifiée : ' + langNames[langSelect.value] + '.');
+  });
+  setMode('ecrit');
+})();
+</script>
+{% endblock %}

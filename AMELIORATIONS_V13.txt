@@ -1,0 +1,20 @@
+SAMOU MBEYMI — V13 : corrections ciblées
+
+1. Profil / e-mail
+- L'écran Modifier mon profil inclut maintenant un champ Adresse e-mail.
+- L'e-mail est envoyé à l'API lors de la modification du profil.
+- Le serializer Django autorise la mise à jour de l'e-mail de l'utilisateur connecté.
+- Validation de format de l'adresse e-mail côté Flutter.
+
+2. Images de récoltes
+- Les cultures avec photos déjà présentes (oignon, tomate, pomme de terre) conservent leurs images dédiées.
+- Pour les cultures sans photo dédiée, l'application n'affiche plus la bannière générale comme si elle représentait la culture. Elle affiche un pictogramme neutre jusqu'à ce qu'une photo vérifiée soit ajoutée.
+
+Protection
+- Aucune migration n'a été créée.
+- Le fichier db.sqlite3, .env, les migrations et les données existantes n'ont pas été modifiés intentionnellement.
+
+Validation
+- Contrôle statique des modifications effectué.
+- Les tests Django et Flutter n'ont pas pu être exécutés dans cet environnement : Django et Flutter ne sont pas installés ici.
+- Tester sur une copie de sauvegarde avant utilisation réelle.

@@ -1,3 +1,11 @@
+# SAMOU MBEYMI — projet source amélioré
+
+**Guide principal :** consultez [`README_PROFESSIONNEL.md`](README_PROFESSIONNEL.md) pour les commandes Windows, la configuration Django/Flutter, la localisation intelligente, les routes API, les tests et les limites connues.
+
+Cette version conserve les modules V14 et ajoute un marché agricole géolocalisé avec offres de récoltes, demandes d’achat et suivi de livraison.
+
+---
+
 # Samou Mbeymi — Application intelligente pour réduire les pertes agricoles
 
 Projet de soutenance — Phase 5 (Interface & base de données) et Phase 6 (Module IA)
@@ -58,6 +66,10 @@ Toutes les routes (sauf inscription/connexion) nécessitent l'en-tête :
 `Authorization: Token <votre_token>`
 
 ---
+
+## Assistant agricole (écrit et vocal)
+
+L'application Flutter dispose désormais d'un bouton microphone dans la barre supérieure. Il ouvre l'assistant vocal, qui peut lire ses réponses et reconnaître des commandes de navigation en français. Une option wolof est disponible lorsque le moteur vocal du téléphone la prend en charge. Consultez `app_flutter/CONFIGURATION_ASSISTANT_VOCAL.md` pour configurer les permissions du microphone Android et connaître les limites de prise en charge linguistique.
 
 ## 2. Lancer l'application Flutter
 

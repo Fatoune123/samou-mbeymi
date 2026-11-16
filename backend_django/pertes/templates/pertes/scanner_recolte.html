@@ -5,6 +5,7 @@
   <div class="page-head"><div><span class="eyebrow">VISION PAR ORDINATEUR</span><h1>Scanner IA</h1><p class="muted">Analysez une photo de votre récolte pour obtenir un signal préventif.</p></div></div>
   {% if recoltes %}
   <div class="scanner">
+    <div id="scanner-csrf" hidden>{% csrf_token %}</div>
     <section class="scanner-preview">
       <div>
         <div class="scan-icon">◉</div><h2 style="color:#fff">Inspection visuelle</h2>
@@ -32,6 +33,7 @@
       <div id="results" style="display:none;margin-top:18px">
         <div class="alert alert-info"><strong id="result-title"></strong><br><span id="result-message"></span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="report-stat"><span>Zones ternies</span><strong id="result-rate">0%</strong></div><div class="report-stat"><span>Quantité potentiellement touchée</span><strong id="result-kg">0 kg</strong></div></div>
+        <p id="result-sign" class="muted" style="font-size:12px;margin:12px 0 0"></p><p id="result-detail" class="muted" style="font-size:11px;margin:6px 0 0"></p><a id="report-loss" class="btn btn-primary" style="display:none;margin-top:14px" href="#">Signaler cette perte →</a>
         <p class="muted" style="font-size:10px;margin-top:12px">Analyse indicative : confirmez toujours le résultat par une observation réelle.</p>
       </div>
     </section>
@@ -46,6 +48,31 @@
   const video=$('video'), canvas=$('canvas'), select=$('recolte-select'), start=$('start-camera'), choose=$('choose-photo'), fileInput=$('photo-input'), capture=$('capture-btn'), analyze=$('analyze-btn'), status=$('camera-status'), preview=$('photo-preview'), loading=$('loading'), results=$('results');
   let stream=null, imageData=null;
   const setStatus = msg => { if(status) status.textContent=msg; };
+  const csrfToken = document.querySelector('#scanner-csrf input[name="csrfmiddlewaretoken"]')?.value || '';
+  // Redimensionne et compresse localement avant envoi : limite les transferts et la mémoire serveur.
+  async function compresserImage(dataUrl){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1600, ratio=Math.min(1,max/Math.max(img.width,img.height));
+        const c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(img.width*ratio)); c.height=Math.max(1,Math.round(img.height*ratio));
+        const ctx=c.getContext('2d',{alpha:false});
+        if(!ctx){reject(new Error('Compression photo indisponible.'));return;}
+        ctx.drawImage(img,0,0,c.width,c.height);
+        c.toBlob(blob=>{
+          if(!blob){reject(new Error('Impossible de compresser cette photo.'));return;}
+          if(blob.size>6*1024*1024){reject(new Error('Photo encore trop volumineuse après compression.'));return;}
+          const reader=new FileReader();
+          reader.onload=()=>resolve(reader.result);
+          reader.onerror=()=>reject(new Error('Lecture de la photo impossible.'));
+          reader.readAsDataURL(blob);
+        },'image/jpeg',0.78);
+      };
+      img.onerror=()=>reject(new Error('Le fichier sélectionné ne peut pas être lu comme une image.'));
+      img.src=dataUrl;
+    });
+  }
   const stopCamera=()=>{ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} };
   async function startCamera(){
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ setStatus('Caméra non disponible dans ce navigateur. Utilisez « Choisir une photo ».'); return; }
@@ -57,27 +84,47 @@
     } catch(e){ setStatus('Accès caméra refusé ou indisponible. Autorisez la caméra dans le navigateur ou utilisez « Choisir une photo ».'); console.error(e); }
   }
   start?.addEventListener('click', startCamera);
-  choose?.addEventListener('click', ()=>fileInput.click());
+  choose?.addEventListener('click', (event)=>{ event.preventDefault(); fileInput.click(); });
+  // Fallback explicite pour les navigateurs qui ne déclenchent pas le sélecteur depuis un bouton masqué.
+  fileInput?.addEventListener('cancel', ()=>setStatus('Aucune photo sélectionnée. Vous pouvez réessayer.'));
+  if (video) { video.style.display='none'; }
+  if (capture) capture.disabled=true;
+  if (analyze) analyze.disabled=true;
   fileInput?.addEventListener('change', e=>{
     const file=e.target.files?.[0]; if(!file) return;
     if(!file.type.startsWith('image/')){alert('Veuillez sélectionner une image.');return;}
-    const reader=new FileReader(); reader.onload=()=>{ imageData=reader.result; preview.src=imageData; preview.style.display='block'; video.style.display='none'; stopCamera(); analyze.disabled=!select.value; capture.disabled=true; setStatus('Photo sélectionnée. Choisissez une récolte puis cliquez sur Analyser.'); }; reader.readAsDataURL(file);
+    if(file.size>20*1024*1024){alert('Fichier trop volumineux. Choisissez une image de moins de 20 Mo.');fileInput.value='';return;}
+    const reader=new FileReader(); reader.onload=async()=>{ try{ imageData=await compresserImage(reader.result); preview.src=imageData; preview.style.display='block'; video.style.display='none'; stopCamera(); analyze.disabled=!select.value; capture.disabled=true; select.classList.toggle('select-attention',!select.value); setStatus(select.value?'Photo compressée et prête. Cliquez sur Analyser.':'Photo compressée. Choisissez d’abord la récolte concernée.'); }catch(err){imageData=null;analyze.disabled=true;setStatus(err.message);alert(err.message);} }; reader.readAsDataURL(file);
   });
-  select?.addEventListener('change',()=>{ analyze.disabled=!select.value || !imageData; });
+  select?.addEventListener('change',()=>{ analyze.disabled=!select.value || !imageData; select.classList.remove('select-attention'); if(select.value && imageData) setStatus('Prêt : cliquez sur Analyser.'); });
   capture?.addEventListener('click',()=>{
     if(!select.value){alert('Sélectionnez une récolte avant de capturer.');return;}
     if(!video.videoWidth){setStatus('La caméra n’est pas prête. Cliquez sur Démarrer la caméra.');return;}
-    canvas.width=video.videoWidth; canvas.height=video.videoHeight; canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height); imageData=canvas.toDataURL('image/jpeg',.82); preview.src=imageData; preview.style.display='block'; video.style.display='none'; analyze.disabled=false; setStatus('Capture réussie. Cliquez sur Analyser.');
+    canvas.width=video.videoWidth; canvas.height=video.videoHeight; canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height); const captured=canvas.toDataURL('image/jpeg',.82); compresserImage(captured).then(data=>{imageData=data;preview.src=imageData;preview.style.display='block';video.style.display='none';analyze.disabled=!select.value;setStatus('Capture compressée. Cliquez sur Analyser.');}).catch(err=>{imageData=null;analyze.disabled=true;setStatus(err.message);});
   });
   analyze?.addEventListener('click',async()=>{
     if(!select.value){alert('Sélectionnez une récolte.');return;}
     if(!imageData){alert('Prenez une photo ou choisissez une image.');return;}
     loading.style.display='block'; analyze.disabled=true;
     try{
-      const r=await fetch('{% url "analyser_recolte_api" %}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recolte_id:Number(select.value),image:imageData})});
-      const d=await r.json(); if(!r.ok) throw new Error(d.error||d.detail||'Erreur pendant l’analyse');
-      $('result-title').textContent=d.categorie==='bon_etat'?'Bon état détecté':d.categorie==='a_surveiller'?'À surveiller':'Détérioration probable'; $('result-message').textContent=d.message||''; $('result-rate').textContent=(d.taux_zones_ternies||0)+'%'; $('result-kg').textContent=(d.quantite_estimee_kg||0)+' kg'; results.style.display='block'; setStatus('Analyse terminée. Consultez le résultat ci-dessous.');
-    }catch(e){alert('Analyse impossible : '+e.message); setStatus('Une erreur est survenue. Vous pouvez réessayer.');}finally{loading.style.display='none'; analyze.disabled=!select.value || !imageData;}
+      const controller = new AbortController();
+      const timeoutId = setTimeout(()=>controller.abort(), 45000);
+      let r;
+      try { r=await fetch('{% url "analyser_recolte_api" %}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},body:JSON.stringify({recolte_id:Number(select.value),image:imageData}),signal:controller.signal}); }
+      finally { clearTimeout(timeoutId); }
+      const d=await r.json();
+      if(!r.ok){
+        if(d.photo_acceptee===false || d.categorie==='photo_refusee'){
+          $('result-title').textContent='Photo refusée'; $('result-message').textContent=d.message||d.error||'Aucune culture agricole détectée. Prenez une photo claire de la récolte seule.';
+          $('result-rate').textContent='—'; $('result-kg').textContent='—'; $('result-sign').textContent=''; $('result-detail').textContent='Aucune estimation de perte n’a été calculée.'; $('report-loss').style.display='none'; results.style.display='block'; setStatus('Photo non reconnue comme une culture agricole. Essayez une autre photo.'); return;
+        }
+        throw new Error(d.error||d.detail||'Erreur pendant l’analyse');
+      }
+      if(d.photo_acceptee===false || d.categorie==='photo_refusee'){
+        $('result-title').textContent='Photo refusée'; $('result-message').textContent=d.message||'Aucune culture agricole détectée. Prenez une photo claire de la récolte seule.'; $('result-rate').textContent='—'; $('result-kg').textContent='—'; $('result-sign').textContent=''; $('result-detail').textContent='Aucune estimation de perte n’a été calculée.'; $('report-loss').style.display='none'; results.style.display='block'; setStatus('Photo non reconnue comme une culture agricole. Essayez une autre photo.'); return;
+      }
+      $('result-title').textContent=d.categorie==='bon_etat'?'Bon état détecté':d.categorie==='a_surveiller'?'À surveiller':'Détérioration probable'; $('result-message').textContent=d.message||''; $('result-rate').textContent=(d.taux_zones_ternies||0)+'%'; $('result-kg').textContent=(d.quantite_estimee_kg||0)+' kg'; $('result-sign').textContent=d.signe_principal||''; $('result-detail').textContent='Zone analysée : '+(d.zone_analysee||0)+' % de l’image (fond ignoré) · sombres : '+(d.part_sombre||0)+' % · brunes : '+(d.part_brune||0)+' %'; const rl=$('report-loss'); if(d.categorie!=='bon_etat'){rl.href='{% url "signaler_perte" %}?recolte='+select.value+'&quantite='+(d.quantite_estimee_kg||''); rl.style.display='inline-flex';}else{rl.style.display='none';} results.style.display='block'; setStatus('Analyse terminée. Consultez le résultat ci-dessous.');
+    }catch(e){const message=e.name==='AbortError'?'Le serveur IA met trop de temps à répondre (45 s). Vérifiez Django et réessayez.':(e.message||'Erreur réseau. Vérifiez que Django est démarré.'); setStatus('Analyse impossible : '+message); alert('Analyse impossible : '+message);}finally{loading.style.display='none'; analyze.disabled=!select.value || !imageData;}
   });
   window.addEventListener('beforeunload',stopCamera);
 })();

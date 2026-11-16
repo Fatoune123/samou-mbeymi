@@ -5,17 +5,22 @@ class AppColors {
   static const primary = Color(0xFF174A3A);
   static const primaryLight = Color(0xFF2D6A53);
   static const primaryDark = Color(0xFF0E3026);
-  static const accent = Color(0xFFF2B84B);
-  static const accentSoft = Color(0xFFFFF1CF);
+  static const accent = Color(0xFFF59E0B);
+  static const accentSoft = Color(0xFFFFF4DB);
+  static const info = Color(0xFF2878E8);
+  static const infoSoft = Color(0xFFEAF3FF);
   static const success = Color(0xFF2E8B57);
-  static const successSoft = Color(0xFFE6F4EC);
-  static const loss = Color(0xFFD05A3A);
-  static const lossSoft = Color(0xFFFBE8E2);
-  static const bg = Color(0xFFF6F7F2);
+  static const successSoft = Color(0xFFE8F5ED);
+  static const loss = Color(0xFFEF4438);
+  static const lossSoft = Color(0xFFFFECEA);
+  static const bg = Color(0xFFF4F7F3);
   static const surface = Color(0xFFFFFFFF);
   static const ink = Color(0xFF17221D);
   static const inkSoft = Color(0xFF64736B);
-  static const border = Color(0xFFE3E9E4);
+  static const border = Color(0xFFDDE7E0);
+  static const surfaceTint = Color(0xFFF0F6F1);
+  static const blue = info;
+  static const blueSoft = infoSoft;
 }
 
 final ThemeData appTheme = ThemeData(
@@ -32,6 +37,7 @@ final ThemeData appTheme = ThemeData(
     error: AppColors.loss,
   ),
   fontFamily: 'Roboto',
+  splashFactory: InkRipple.splashFactory,
   visualDensity: VisualDensity.standard,
   appBarTheme: const AppBarTheme(
     backgroundColor: Colors.transparent,
@@ -39,13 +45,14 @@ final ThemeData appTheme = ThemeData(
     elevation: 0,
     scrolledUnderElevation: 0,
     centerTitle: false,
+    titleTextStyle: TextStyle(color: AppColors.ink, fontSize: 18, fontWeight: FontWeight.w900),
   ),
   cardTheme: CardThemeData(
     color: AppColors.surface,
     elevation: 0,
     margin: EdgeInsets.zero,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(22)),
+      borderRadius: BorderRadius.all(Radius.circular(24)),
       side: BorderSide(color: AppColors.border),
     ),
   ),
@@ -54,16 +61,16 @@ final ThemeData appTheme = ThemeData(
     fillColor: AppColors.surface,
     contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       borderSide: const BorderSide(color: AppColors.border),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       borderSide: const BorderSide(color: AppColors.border),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.7),
+      borderRadius: BorderRadius.circular(18),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
     ),
     labelStyle: const TextStyle(color: AppColors.inkSoft),
     floatingLabelStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
@@ -75,7 +82,7 @@ final ThemeData appTheme = ThemeData(
       elevation: 0,
       minimumSize: const Size.fromHeight(54),
       padding: const EdgeInsets.symmetric(horizontal: 22),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
     ),
   ),
@@ -88,7 +95,7 @@ final ThemeData appTheme = ThemeData(
     ),
   ),
   navigationBarTheme: NavigationBarThemeData(
-    height: 72,
+    height: 76,
     backgroundColor: Colors.white,
     elevation: 0,
     indicatorColor: AppColors.successSoft,

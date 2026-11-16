@@ -1,0 +1,68 @@
+SAMOU MBEYMI — RAPPORT DE CORRECTION PARTIELLE
+================================================
+
+Archive de travail : SAMOU_MBEYMI_ASSISTANT_AGRICOLE_AMELIORE
+Les corrections ont été appliquées sur une copie de l'archive reçue.
+
+PROTECTIONS
+-----------
+- db.sqlite3 n'a pas été modifié (empreinte SHA-256 vérifiée avant/après).
+- Aucun compte, mot de passe ou enregistrement n'a été modifié.
+- Aucun script de migration n'a été exécuté.
+- Le fichier .env de la copie a été conservé sans afficher sa valeur.
+
+CORRECTIONS APPLIQUÉES
+---------------------
+1. backend_django/pertes/api_views.py
+   - Ajout de nouvelles tentatives automatiques (backoff 1 s puis 2 s)
+     pour les erreurs Gemini transitoires 429, 500, 502, 503 et 504.
+   - Le modèle configuré dans .env reste inchangé.
+   - Aucune réponse fictive n'est générée si Gemini reste indisponible.
+
+2. app_flutter/lib/services/api_service.dart
+   - Ajout d'une limite d'attente de 120 secondes pour l'envoi du scanner
+     et de 30 secondes pour la lecture de la réponse.
+
+3. app_flutter/lib/screens/scanner_screen.dart
+   - Message explicite si le scanner dépasse le délai autorisé.
+
+CONSTATS IMPORTANTS — NON MODIFIÉS
+----------------------------------
+1. Reconnaissance vocale des six langues
+   Flutter utilise encore speech_to_text, qui dépend des moteurs disponibles
+   sur le téléphone. Les six langues ne sont donc PAS encore garanties.
+   Une vraie intégration STT côté serveur exige l'enregistrement audio,
+   un endpoint audio et un modèle évalué langue par langue. Les enregistrements
+   natifs annoncés sont nécessaires pour mesurer la qualité.
+
+2. Prononciation des six langues
+   flutter_tts et SpeechSynthesis du navigateur dépendent encore des voix
+   installées. Aucun moteur TTS local validé pour les six langues n'a été
+   intégré dans cette correction partielle.
+
+3. Scanner photo
+   Le backend utilise CLIP via requirements-vision.txt (Transformers + Torch).
+   Le premier téléchargement du modèle peut être long. Ces dépendances ne
+   sont pas dans requirements.txt principal. Il faut installer et tester
+   le moteur de vision dans l'environnement Django.
+
+4. Analyse du risque
+   Le code attend un modèle Random Forest déjà entraîné. Le ZIP ne contient
+   pas de modèle entraîné dans pertes/ia/modeles. Six récoltes sont présentes,
+   mais le faible volume ne garantit pas un modèle fiable. Aucun entraînement
+   automatique n'a été lancé pour éviter de présenter un résultat fragile
+   comme une prédiction validée.
+
+TESTS EFFECTUÉS
+---------------
+- Compilation syntaxique Python de api_views.py : réussie.
+- Vérification de l'empreinte de db.sqlite3 : inchangée.
+- Tests Flutter/Django en exécution réelle : non effectués dans cet environnement.
+
+PROCHAINE PHASE NÉCESSAIRE
+--------------------------
+- Intégrer l'enregistrement audio Flutter/Web et une API STT.
+- Évaluer les modèles libres sur les six langues avec les locuteurs natifs.
+- Sélectionner ou adapter un TTS pour chaque langue.
+- Installer et tester le moteur CLIP.
+- Évaluer le modèle de risque avec davantage de données et une validation séparée.

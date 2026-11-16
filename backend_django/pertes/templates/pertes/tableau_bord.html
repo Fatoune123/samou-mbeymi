@@ -1,9 +1,116 @@
-{% extends 'pertes/base.html' %}{% block title %}Tableau de bord — Samou Mbeymi{% endblock %}{% block content %}
-<main class="wrap dashboard-shell"><aside class="side-panel"><h3>Samou Mbeymi</h3><p>Centre de pilotage agricole</p><div class="side-links"><a class="active" href="{% url 'tableau_bord' %}">⌂ Vue d'ensemble</a><a href="{% url 'liste_recoltes' %}">🌱 Récoltes</a><a href="{% url 'liste_pertes' %}">⚠ Pertes</a><a href="{% url 'scanner_recolte' %}">✦ Intelligence IA</a><a href="{% url 'prediction_risque' %}">🤖 Prédiction</a><a href="{% url 'liste_stockages' %}">▣ Stockage</a><a href="{% url 'localisation' %}">📍 Localisation</a><a href="{% url 'rapport' %}">▤ Rapports</a></div></aside><section class="dash-main"><div class="dash-top"><div><span class="eyebrow">CENTRE DE PILOTAGE</span><h1>Bonjour, {{ user.first_name|default:user.username }}.</h1></div><div class="profile-chip">{{ agriculteur.get_region_display }} · {{ agriculteur.nom_exploitation|default:'Exploitation agricole' }}</div></div>
-<div class="hero-panel"><div><span class="eyebrow" style="color:#f2b84b">INDICE DE MAÎTRISE</span><h2>Chaque kilo compte.</h2><p>Votre production est suivie en continu. Le moteur d'analyse met en évidence les pertes, les causes récurrentes et les actions prioritaires.</p><div class="hero-actions"><a class="btn btn-accent" href="{% url 'ajouter_recolte' %}">+ Enregistrer une récolte</a><a class="btn" style="background:rgba(255,255,255,.1);color:#fff" href="{% url 'scanner_recolte' %}">✦ Ouvrir le scanner IA</a></div></div><div class="risk-ring" style="--risk:{{ taux_perte }}%"><div><strong>{{ taux_perte }}%</strong><small>taux de perte</small></div></div></div>
-<div class="kpi-grid"><article class="kpi"><i class="icon">🌱</i><small>Récoltes</small><strong>{{ nb_recoltes }}</strong><span>enregistrées</span></article><article class="kpi"><i class="icon">⚖</i><small>Production</small><strong>{{ total_recolte_kg|floatformat:1 }}</strong><span>kg cumulés</span></article><article class="kpi"><i class="icon" style="background:#fae9e4">↘</i><small>Pertes</small><strong style="color:#cf5b3c">{{ total_perte_kg|floatformat:1 }}</strong><span>kg signalés</span></article><article class="kpi"><i class="icon" style="background:#fff1d4">◔</i><small>Conservé</small><strong>{{ rendement_conserve }}%</strong><span>production préservée</span></article></div>
-<div class="analytics-grid"><article class="panel"><div class="panel-head"><div><h2>Production & pertes</h2><p>Évolution des 12 derniers mois.</p></div><a class="btn btn-soft btn-sm" href="{% url 'rapport' %}">Voir le rapport</a></div><div class="chart">{% for p in evolution_mensuelle %}<div class="chart-col"><div class="chart-bars"><span class="prod" style="height:{{ p.production_pct }}%" title="{{ p.production }} kg"></span><span class="loss" style="height:{{ p.perte_pct }}%" title="{{ p.perte }} kg"></span></div><small>{{ p.label }}</small></div>{% endfor %}</div><div class="legend"><span><i style="background:#3d8a6b"></i>Production</span><span><i style="background:#cf5b3c"></i>Pertes</span></div></article><article class="panel"><div class="panel-head"><div><h2>Causes prioritaires</h2><p>Les postes à traiter en premier.</p></div></div>{% for cause in pertes_par_type|slice:':5' %}<div class="cause"><div class="cause-top"><strong>{{ cause.label }}</strong><b>{{ cause.total|floatformat:1 }} kg</b></div><div class="track"><span style="width:{{ cause.pct }}%"></span></div></div>{% empty %}<div class="empty-state">Aucune perte enregistrée.</div>{% endfor %}</article></div>
-<div class="analytics-grid"><article class="panel ai-card"><span class="ai-badge">✦ ANALYSE INTELLIGENTE</span><h2>Risque global : {{ niveau_risque_affiche }}</h2><p>{{ recommandation_ia }}</p><div class="hero-actions"><a class="btn btn-accent" href="{% url 'scanner_recolte' %}">Analyser une récolte</a><a class="btn" style="background:rgba(255,255,255,.1);color:#fff" href="{% url 'rapport' %}">Consulter les alertes</a></div></article><article class="panel"><div class="panel-head"><div><h2>Activité récente</h2><p>Vos dernières opérations.</p></div></div>{% for r in recoltes_recentes %}<div class="activity"><div class="activity-icon">🌱</div><div><strong>{{ r.culture.nom }}</strong><small>{{ r.date_recolte|date:'d/m/Y' }} · {{ r.quantite_kg }} kg</small></div><b>{{ r.pourcentage_perte }}%</b></div>{% empty %}<div class="empty-state">Commencez par enregistrer une récolte.</div>{% endfor %}</article></div>
-</div><div class="dashboard-bottom-grid"><article class="panel location-mini"><div class="panel-head"><div><h2>📍 Ma localisation</h2><p>Position de votre exploitation.</p></div><a class="btn btn-soft btn-sm" href="{% url 'localisation' %}">Ouvrir la carte</a></div>{% if agriculteur.latitude and agriculteur.longitude %}<strong>{{ agriculteur.localisation_nom|default:'Exploitation agricole' }}</strong><p class="muted">{{ agriculteur.latitude }}, {{ agriculteur.longitude }}</p>{% else %}<div class="empty-state compact">Aucune position enregistrée.<br><a href="{% url 'localisation' %}">Ajouter ma localisation →</a></div>{% endif %}</article><article class="panel prediction-mini"><div class="panel-head"><div><h2>🤖 Prédiction</h2><p>Estimez le risque avant une nouvelle récolte.</p></div></div><p class="muted">Le modèle Random Forest analyse la culture, la région, la saison, la quantité et le stockage.</p><a class="btn btn-primary" href="{% url 'prediction_risque' %}">Lancer une prédiction →</a></article></div>
-</div></div>
-</section></main>{% endblock %}
+{% extends 'pertes/base.html' %}
+{% load css_utils static %}
+{% block title %}Tableau de bord — Samou Mbeymi{% endblock %}
+{% block content %}
+<main class="wrap dashboard-shell dashboard-v3">
+  <aside class="side-panel dashboard-sidebar">
+    <a class="sidebar-brand" href="{% url 'tableau_bord' %}">
+      <span class="sidebar-mark"><img src="{% static 'img/logo-emblem.png' %}" alt="" /></span>
+      <span><strong>Samou Mbeymi</strong><small>Pilotage agricole</small></span>
+    </a>
+    <span class="sidebar-caption">ESPACE DE GESTION</span>
+    <nav class="side-links" aria-label="Navigation du tableau de bord">
+      <a class="active" href="{% url 'tableau_bord' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Tableau de bord</span>
+      </a>
+      <a href="{% url 'liste_recoltes' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V11"/><path d="M12 13C5 13 3 9 3 5c5 0 9 2 9 8Z"/><path d="M12 10c0-5 3-7 9-7 0 5-3 9-9 9"/></svg>
+        <span>Récoltes</span>
+      </a>
+      <a href="{% url 'liste_pertes' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
+        <span>Pertes</span>
+      </a>
+      <a href="{% url 'assistant_agricole_web' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l4 2"/><path d="M17 3h4v4"/></svg>
+        <span>Assistant agricole</span>
+      </a>
+      <a href="{% url 'liste_stockages' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3.5 7.7 12 12l8.5-4.3M12 12v9"/></svg>
+        <span>Stockage</span>
+      </a>
+      <a href="{% url 'rapport' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4M4 20h17"/><path d="m7 15 4-4 3 2 6-7"/></svg>
+        <span>Rapports</span>
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <span class="sidebar-location-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+      <div><small>VOTRE EXPLOITATION</small><strong>{{ agriculteur.get_region_display }}</strong></div>
+    </div>
+  </aside>
+
+  <section class="dash-main">
+    <header class="dash-top">
+      <div>
+        <span class="eyebrow">CENTRE DE PILOTAGE AGRICOLE</span>
+        <h1>Bonjour, {{ user.first_name|default:user.username }}.</h1>
+        <p class="dashboard-subtitle">Suivez vos récoltes, vos stocks et les pertes de votre exploitation.</p>
+      </div>
+      <div class="profile-chip"><span class="profile-dot"></span><span>{{ agriculteur.get_region_display }}</span><span class="profile-separator">·</span><strong>{{ agriculteur.nom_exploitation|default:'Mon exploitation' }}</strong></div>
+    </header>
+
+    <section class="hero-panel dashboard-hero">
+      <div class="hero-copy">
+        <span class="hero-kicker"><span class="hero-kicker-dot"></span>SAMOU MBEYMI <i> / </i> PILOTAGE DES RÉCOLTES</span>
+        <h2>Chaque récolte mérite<br> d'être préservée.</h2>
+        <p>Centralisez vos récoltes, suivez leur stockage, tracez chaque opération et maîtrisez les pertes agricoles.</p>
+        <div class="hero-actions">
+          <a class="btn btn-accent" href="{% url 'ajouter_recolte' %}"><span class="btn-plus">＋</span> Enregistrer une récolte</a>
+          <a class="btn hero-outline" href="{% url 'liste_stockages' %}">Explorer le stockage <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-label">TAUX DE PERTES</span>
+        <div class="risk-ring" style="--risk:{{ taux_perte|css_num }}%">
+          <div><strong>{{ taux_perte }}<small>%</small></strong><span>des quantités récoltées</span></div>
+        </div>
+        <small class="hero-stat-foot"><b>{{ rendement_conserve }} %</b> de production préservée</small>
+      </div>
+      <div class="hero-decoration" aria-hidden="true"></div>
+    </section>
+
+    <div class="section-label"><span>INDICATEURS DE L'EXPLOITATION</span><small>Calculés à partir de vos enregistrements</small></div>
+    <div class="kpi-grid dashboard-kpis">
+      <article class="kpi"><span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 21V11"/><path d="M12 13C5 13 3 9 3 5c5 0 9 2 9 8Z"/><path d="M12 10c0-5 3-7 9-7 0 5-3 9-9 9"/></svg></span><small>Récoltes enregistrées</small><strong>{{ nb_recoltes }}</strong><span>lots agricoles créés</span></article>
+      <article class="kpi"><span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 17h18M8 3 5 7l3 4M16 13l3 4-3 4"/></svg></span><small>Production totale</small><strong>{{ total_recolte_kg|floatformat:1 }} <em>kg</em></strong><span>quantité récoltée</span></article>
+      <article class="kpi kpi-warning"><span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 3v13"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg></span><small>Pertes déclarées</small><strong>{{ total_perte_kg|floatformat:1 }} <em>kg</em></strong><span>{{ nb_pertes }} signalement(s)</span></article>
+      <article class="kpi"><span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l4 2"/><path d="m16 3 5 0 0 5"/></svg></span><small>Production préservée</small><strong>{{ rendement_conserve }}<em>%</em></strong><span>après déduction des pertes</span></article>
+      <article class="kpi"><span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3.5 7.7 12 12l8.5-4.3M12 12v9"/></svg></span><small>Stock restant estimé</small><strong>{{ quantite_stockee_kg|floatformat:1 }} <em>kg</em></strong><span>sur {{ nb_lots_stockes }} lot(s) avec lieu déclaré</span></article>
+      <article class="kpi"><span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h8M8 17h4"/></svg></span><small>Lots localisés</small><strong>{{ nb_lots_stockes }}</strong><span>avec lieu de stockage renseigné</span></article>
+    </div>
+
+    <div class="analytics-grid dashboard-analytics">
+      <article class="panel">
+        <div class="panel-head"><div><span class="panel-eyebrow">ANALYSE DE LA PRODUCTION</span><h2>Production et pertes</h2><p>Comparaison mensuelle sur les 12 derniers mois.</p></div><a class="btn btn-soft btn-sm" href="{% url 'rapport' %}">Voir les rapports <span>→</span></a></div>
+        <div class="chart">{% for p in evolution_mensuelle %}<div class="chart-col"><div class="chart-bars"><span class="prod" style="height:{{ p.production_pct|css_num }}%" title="Production : {{ p.production }} kg"></span><span class="loss" style="height:{{ p.perte_pct|css_num }}%" title="Pertes : {{ p.perte }} kg"></span></div><small>{{ p.label }}</small></div>{% endfor %}</div>
+        <div class="legend"><span><i class="legend-prod"></i>Production récoltée</span><span><i class="legend-loss"></i>Pertes déclarées</span></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head"><div><span class="panel-eyebrow">SUIVI DES INCIDENTS</span><h2>Causes des pertes</h2><p>Les causes qui nécessitent votre attention.</p></div></div>
+        {% for cause in pertes_par_type|slice:':5' %}<div class="cause"><div class="cause-top"><strong>{{ cause.label }}</strong><b>{{ cause.total|floatformat:1 }} kg</b></div><div class="track"><span style="width:{{ cause.pct|css_num }}%"></span></div></div>{% empty %}<div class="empty-state">Aucune perte enregistrée.</div>{% endfor %}
+      </article>
+    </div>
+
+    <div class="analytics-grid dashboard-bottom">
+      <article class="panel">
+        <div class="panel-head"><div><span class="panel-eyebrow">GESTION DES LOTS</span><h2>Dernières récoltes</h2><p>Accédez rapidement aux fiches de vos lots.</p></div><a class="btn btn-soft btn-sm" href="{% url 'liste_recoltes' %}">Toutes les récoltes <span>→</span></a></div>
+        {% for r in recoltes_recentes %}
+          <a class="dashboard-list-row" href="{{ r.get_absolute_url }}">{% with culture_name=r.culture.nom|lower %}
+<span class="crop-product-icon crop-{{ culture_name|slugify }}" aria-hidden="true">
+{% if "tomate" in culture_name %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8c-4.5-3.5-9 .2-8 5.3.8 4.1 4.2 6.7 8 6.7s7.2-2.6 8-6.7C21 8.2 16.5 4.5 12 8Z" fill="currentColor" stroke="none"/><path d="M12 8c-1.8-3-4.1-3.2-5.8-2.5 1.8.2 2.8 1.2 3.5 2.8M12 8c1.8-3 4.1-3.2 5.8-2.5-1.8.2-2.8 1.2-3.5 2.8M12 8V4" /></svg>{% elif "chou" in culture_name %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20c-5.8 0-9-3.8-8-8.2.6-2.8 3-4.6 5.4-4.6.3-2.1 2-3.2 3.8-2.5 1.7-1 4.2.1 4.3 2.4 2.4.4 4.2 2.5 4.1 5.1-.2 4.5-3.8 7.8-9.6 7.8Z" fill="currentColor" stroke="none"/><path d="M12 19c-2-4.2-1.2-8.6 1.2-12M12 16c-2.5-3-4.5-4-6.5-4M13 14c2.2-2.6 4.1-3.6 6-3.8"/></svg>{% elif "oignon" in culture_name %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3c1.2 2.5 7.5 5.1 7.5 10.5a7.5 7.5 0 1 1-15 0C4.5 8.1 10.8 5.5 12 3Z" fill="currentColor" stroke="none"/><path d="M12 3c-1 5-1 10 0 17M8 9c2 2 2.5 5 2 8M16 9c-2 2-2.5 5-2 8"/></svg>{% elif "pomme" in culture_name or "terre" in culture_name %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8c-5-3-9 1-8 6 1 5 4 7 8 5 4 2 7 0 8-5 1-5-3-9-8-6Z" fill="currentColor" stroke="none"/><path d="M12 8c0-3 1-4 3-5M13 5c2-2 4-2 5-1-1 2-3 2-5 1"/></svg>{% elif "carotte" in culture_name %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 7c4-2 10-1 14 2-2 5-5 10-9 13-3-3-5-9-5-15Z" fill="currentColor" stroke="none"/><path d="M10 7C8 4 8 2 9 1M12 7c0-3 2-5 4-6M14 8c2-2 4-2 6-2M8 12l4 1M10 16l4 1"/></svg>{% else %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21V11M12 13C5 13 3 9 3 5c5 0 9 2 9 8ZM12 10c0-5 3-7 9-7 0 5-3 9-9 9Z" fill="currentColor" stroke="none"/></svg>{% endif %}
+</span>{% endwith %}<span class="row-main"><strong>{{ r.culture.nom }}</strong><small>{{ r.numero_lot }} · {{ r.date_recolte|date:'d/m/Y' }}</small></span><b>{{ r.quantite_kg|floatformat:1 }} kg</b><span class="row-arrow">→</span></a>
+        {% empty %}<div class="empty-state">Aucune récolte enregistrée. Commencez par créer votre premier lot.</div>{% endfor %}
+      </article>
+      <article class="panel">
+        <div class="panel-head"><div><span class="panel-eyebrow">HISTORIQUE DES OPÉRATIONS</span><h2>Traçabilité récente</h2><p>Derniers événements enregistrés sur vos lots.</p></div></div>
+        {% for event in evenements_recents %}
+          <a class="dashboard-list-row" href="{{ event.recolte.get_absolute_url }}"><span class="row-icon row-icon-soft"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span class="row-main"><strong>{{ event.get_type_evenement_display }}</strong><small>{{ event.recolte.numero_lot }} · {{ event.date_evenement|date:'d/m/Y H:i' }}</small></span><span class="row-arrow">→</span></a>
+        {% empty %}<div class="empty-state">Les événements de vos récoltes apparaîtront ici.</div>{% endfor %}
+        <a class="panel-link" href="{% url 'liste_stockages' %}">Consulter les opérations de stockage <span>→</span></a>
+      </article>
+    </div>
+  </section>
+</main>
+{% endblock %}

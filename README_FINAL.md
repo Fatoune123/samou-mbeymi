@@ -1,36 +1,24 @@
-# Samou Mbeymi — version finale de soutenance
+# Samou Mbeymi — V16 recentrée pour la soutenance
 
 Application de suivi post-récolte destinée à aider un agriculteur à **enregistrer ses récoltes, déclarer les pertes, visualiser ses indicateurs et utiliser des outils d'aide à la décision basés sur l'IA**.
 
-## 1. Fonctionnalités
+## 1. Périmètre fonctionnel V16
 
-### Application mobile Flutter
-- Inscription et connexion sécurisées par token.
-- Tableau de bord avec KPI : production, pertes, taux de perte, rendement conservé.
-- Évolution sur 12 mois avec graphique.
-- Alertes et recommandations contextualisées.
-- CRUD complet des récoltes : créer, consulter, modifier, supprimer.
-- CRUD complet des pertes : signaler, consulter, modifier, supprimer.
-- Contrôle métier : une perte ne peut pas dépasser la quantité récoltée.
-- Scanner photo : analyse visuelle indicative des zones ternies/brunes.
-- Prédiction du risque de perte avant enregistrement d'une récolte.
-- Profil agriculteur modifiable.
-- API configurable pour émulateur Android, web ou téléphone physique.
+### Fonctionnalités prioritaires
+- Inscription et connexion par token.
+- Gestion des récoltes et consultation des lots enregistrés.
+- Déclaration, consultation et suivi des pertes.
+- Contrôle métier empêchant une perte de dépasser la quantité récoltée.
+- Tableau de bord : volumes récoltés, volumes perdus, taux de perte et évolution mensuelle.
+- Synthèse de pilotage et consultation des points de stockage.
+- Rapports et export CSV côté backend.
 
-### Backend Django
-- Interface web responsive.
-- Authentification Django.
-- Gestion des récoltes et pertes.
-- Tableau de bord web.
-- Centre de rapports.
-- Export CSV des récoltes et pertes.
-- API REST avec authentification Token.
-- Endpoint de santé `/api/health/`.
-- Endpoint d'information sur le modèle IA `/api/ia/info/`.
-- Modèle Random Forest pour le risque de perte.
-- Scanner photo basé sur une analyse colorimétrique indicative.
-- Commande de préparation des données de démonstration.
-- Tests API de base.
+### Fonctionnalités reportées
+- Analyse photographique par IA.
+- Assistant conversationnel agricole.
+- Mise en relation producteurs–acheteurs / marketplace.
+
+Le code source de ces modules est conservé pour une version ultérieure, mais leurs accès sont retirés de la navigation principale V16. Leur fonctionnement n'est pas considéré comme faisant partie du périmètre validé de cette version.
 
 ## 2. Architecture
 
@@ -154,3 +142,7 @@ Cette distinction doit être expliquée au jury : elle montre que le projet maî
 - Responsive design.
 - Export des données.
 - Tests automatisés.
+
+
+## Traçabilité événementielle (itération V17)
+Le modèle `EvenementTraceabilite` conserve l'historique des récoltes : création, changement de lieu, mise à jour de quantité et déclaration de perte. L'API `/api/traceabilite/evenements/` est réservée aux utilisateurs authentifiés et filtrée par propriétaire. Consulter `V17_NOTES_DEVELOPPEMENT.md` pour les étapes de migration et de test.

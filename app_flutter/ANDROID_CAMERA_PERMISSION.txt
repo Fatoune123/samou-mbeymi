@@ -1,0 +1,9 @@
+CONFIGURATION ANDROID REQUISE POUR LA CAMERA FLUTTER
+
+Cette archive ne contenait pas le dossier app_flutter/android. Ne remplacez pas votre dossier Android existant.
+Dans app_flutter/android/app/src/main/AndroidManifest.xml, ajoutez cette ligne directement sous la balise <manifest> et avant <application> :
+
+<uses-permission android:name="android.permission.CAMERA" />
+
+Le plugin camera demande ensuite l’autorisation au runtime. Conservez toutes les autres permissions et configurations existantes.
+Après ajout de la dépendance camera dans pubspec.yaml, exécutez flutter pub get puis reconstruisez l’application.

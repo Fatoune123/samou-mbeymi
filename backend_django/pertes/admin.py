@@ -39,3 +39,21 @@ class PerteAdmin(admin.ModelAdmin):
 class StockageAdmin(admin.ModelAdmin):
     list_display = ('nom', 'region', 'capacite_kg', 'disponible', 'contact')
     list_filter = ('region', 'disponible')
+
+from .models import OffreRecolte, CommandeLivraison
+
+
+@admin.register(OffreRecolte)
+class OffreRecolteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'recolte', 'quantite_kg', 'prix_kg_fcfa', 'commune', 'statut', 'date_creation')
+    list_filter = ('statut', 'recolte__agriculteur__region')
+    search_fields = ('recolte__culture__nom', 'recolte__agriculteur__user__username', 'commune')
+    readonly_fields = ('date_creation', 'date_modification')
+
+
+@admin.register(CommandeLivraison)
+class CommandeLivraisonAdmin(admin.ModelAdmin):
+    list_display = ('id', 'offre', 'acheteur', 'quantite_kg', 'statut', 'date_creation')
+    list_filter = ('statut', 'date_creation')
+    search_fields = ('acheteur__username', 'offre__recolte__culture__nom', 'telephone_contact')
+    readonly_fields = ('date_creation', 'date_modification')

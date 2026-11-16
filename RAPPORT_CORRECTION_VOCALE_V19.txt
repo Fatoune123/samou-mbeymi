@@ -1,0 +1,26 @@
+SAMOU MBEYMI V18 - CORRECTIONS CIBLEES DE LA VOIX
+================================================
+
+Modifications de code :
+- Web : toute réponse issue d'une question vocale déclenche désormais la synthèse vocale automatiquement, même si le mode d'interface change.
+- Web : recherche d'une voix installée par code de langue exact ou code de langue de base. Aucune substitution silencieuse vers le français.
+- Flutter : recherche d'une voix TTS installée par code exact ou code de langue de base, y compris avec une région différente.
+- Flutter : attente de fin de lecture TTS et débit légèrement ralenti.
+- Django : consignes de réponse plus courtes, orales et adaptées aux producteurs ne sachant pas lire ; demande de reformulation si le modèle n'est pas sûr de la langue locale.
+
+Fichiers protégés vérifiés par SHA-256 :
+- backend_django/db.sqlite3 : inchangé
+- backend_django/.env : inchangé
+- fichiers de migrations présents : inchangés
+
+Vérifications :
+- archive source intègre avant modification.
+- compilation syntaxique Python de pertes/api_views.py : réussie.
+- vérification syntaxique JavaScript du script de assistant_agricole.html : réussie.
+- Flutter/Dart : non vérifié par flutter analyze dans cet environnement.
+
+Limite importante :
+La synthèse vocale dépend des voix réellement installées sur le navigateur ou le téléphone.
+Le code ne peut pas fabriquer une voix wolof, pulaar, sérère, joola, mandinka ou soninké si le moteur TTS de l'appareil ne la fournit pas.
+La prise en charge de la reconnaissance et de la génération textuelle dans ces langues doit être validée par des essais avec des locuteurs natifs.
+Aucune migration ni opération sur la base de données n'a été exécutée.

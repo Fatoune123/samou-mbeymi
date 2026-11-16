@@ -1,0 +1,55 @@
+{% extends "pertes/base.html" %}
+{% block title %}Engrais et approvisionnement — Samou Mbeymi{% endblock %}
+{% block content %}
+<style>
+.engrais-page{max-width:1320px;margin:0 auto;padding:30px 24px 48px;color:#102b24}.engrais-page *{box-sizing:border-box}.engrais-hero{padding:30px;border-radius:22px;background:linear-gradient(120deg,#e8f7ee,#f8fcf9);border:1px solid #d4e8dc}.engrais-eyebrow{font-size:.76rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#28704e}.engrais-hero h1{margin:10px 0;color:#14532d;font-size:clamp(1.8rem,3vw,2.5rem)}.engrais-hero p{margin:0;max-width:850px;color:#476158;line-height:1.7}.engrais-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr));gap:15px;margin:22px 0}.engrais-card{background:#fff;border:1px solid #dce8e0;border-radius:16px;padding:21px;box-shadow:0 7px 20px rgba(18,59,38,.04)}.engrais-card h2{margin:0 0 12px;color:#14532d;font-size:1.12rem}.engrais-card p{line-height:1.6;color:#52665c}.engrais-card p:last-child{margin-bottom:0}.engrais-tag{display:inline-flex;margin-bottom:12px;border-radius:99px;background:#eef6f0;color:#285740;padding:5px 9px;font-size:.76rem;font-weight:800}.engrais-section{margin:28px 0 12px;color:#173b2f;font-size:1.35rem}.engrais-section-lead{margin:-4px 0 15px;color:#64776e;line-height:1.55}.engrais-calculator{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:16px}.engrais-form,.engrais-result{background:#fff;border:1px solid #dce8e0;border-radius:17px;padding:22px}.engrais-form h3,.engrais-result h3{margin:0 0 14px;color:#14532d}.engrais-fields{display:grid;grid-template-columns:1fr 1fr;gap:13px}.engrais-field label{display:block;margin-bottom:6px;font-size:.88rem;font-weight:800;color:#314f41}.engrais-field input,.engrais-field select{width:100%;padding:11px 12px;border:1px solid #cad9cf;border-radius:10px;font:inherit;background:#fff}.engrais-field input:focus,.engrais-field select:focus{outline:3px solid #d5efdf;border-color:#28704e}.engrais-help{font-size:.8rem;color:#64776e;line-height:1.5;margin:6px 0 0}.engrais-submit{margin-top:15px;padding:11px 15px;border:0;border-radius:10px;background:#14532d;color:#fff;font:inherit;font-weight:800;cursor:pointer}.engrais-result{background:linear-gradient(145deg,#f4fbf6,#fff)}.engrais-result-label{font-size:.85rem;color:#64776e}.engrais-result-value{display:block;margin:4px 0 14px;color:#14532d;font-size:clamp(1.7rem,3vw,2.4rem);font-weight:900}.engrais-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.engrais-result-stat{border:1px solid #dce8e0;border-radius:12px;padding:12px;background:#fff}.engrais-result-stat strong{display:block;color:#14532d;font-size:1.15rem}.engrais-result-stat span{color:#64776e;font-size:.8rem}.engrais-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}.engrais-step{border:1px solid #e0e9e3;border-radius:13px;padding:16px;background:#fff;line-height:1.55;color:#52665c}.engrais-step strong{display:block;margin-bottom:6px;color:#14532d}.engrais-note{padding:16px 18px;border-left:4px solid #22c55e;background:#f0fbf3;border-radius:10px;line-height:1.6;color:#315647;margin-top:20px}@media(max-width:760px){.engrais-calculator{grid-template-columns:1fr}}@media(max-width:640px){.engrais-page{padding:18px 12px}.engrais-hero{padding:20px}.engrais-fields{grid-template-columns:1fr}}
+
+.engrais-card-summary{margin:0;color:#52665c;line-height:1.5}
+.engrais-more{margin-top:10px;padding-top:9px;border-top:1px solid #e4eee7}
+.engrais-more summary,.engrais-before summary,.engrais-note summary{cursor:pointer;color:#14532d;font-weight:800;font-size:.88rem}
+.engrais-more p{margin:8px 0 0;font-size:.9rem}
+.engrais-before{margin-top:22px;padding:14px 16px;border:1px solid #dce8e0;border-radius:13px;background:#fff}
+.engrais-before .engrais-list{margin-top:12px}
+.engrais-note{margin-top:14px;padding:13px 16px}
+.engrais-note p{margin-bottom:0;line-height:1.5}
+.engrais-hero{padding:24px}
+@media(max-width:700px){.engrais-page{padding:18px 12px 32px}.engrais-hero{padding:20px}.engrais-calculator{grid-template-columns:1fr}.engrais-fields{grid-template-columns:1fr}}
+</style>
+<main class="engrais-page">
+  <header class="engrais-hero"><div class="engrais-eyebrow">Intrants agricoles · Planification</div><h1>Engrais et approvisionnement</h1><p>Estimez vos besoins avec une dose agronomique validée.</p></header>
+  <section class="engrais-grid" aria-label="Familles d'engrais">{% for e in engrais %}<article class="engrais-card"><span class="engrais-tag">Famille d’intrants</span><h2>{{ e.nom }}</h2><p class="engrais-card-summary">{{ e.usage }}</p><details class="engrais-more"><summary>Précautions</summary><p>{{ e.prudence }}</p></details></article>{% endfor %}</section>
+  <section aria-labelledby="calcul-titre"><h2 id="calcul-titre" class="engrais-section">Calculateur de quantité</h2><p class="engrais-section-lead">Saisissez une superficie et une dose déjà validée par un conseiller.</p>
+    <div class="engrais-calculator"><form class="engrais-form" id="fertilizer-calculator"><h3>Paramètres de la parcelle</h3><div class="engrais-fields"><div class="engrais-field"><label for="culture-engrais">Culture</label><select id="culture-engrais" required><option value="">Choisir une culture</option><option>Oignon</option><option>Tomate</option><option>Pomme de terre</option><option>Carotte</option><option>Chou</option><option>Mangue</option><option>Autre culture</option></select></div><div class="engrais-field"><label for="surface-engrais">Superficie (hectares)</label><input id="surface-engrais" type="number" min="0.01" max="10000" step="0.01" placeholder="Ex. : 0,5" required><p class="engrais-help">1 hectare = 10 000 m².</p></div><div class="engrais-field"><label for="dose-engrais">Dose validée (kg/ha)</label><input id="dose-engrais" type="number" min="0.01" step="0.01" placeholder="Dose indiquée par le conseiller" required><p class="engrais-help">Ne saisissez pas une dose supposée.</p></div><div class="engrais-field"><label for="sac-engrais">Poids d’un sac (kg)</label><input id="sac-engrais" type="number" min="0.1" step="0.1" value="50" required></div></div><button class="engrais-submit" type="submit">Calculer les besoins</button><p id="engrais-error" class="engrais-help" role="alert"></p></form>
+      <aside class="engrais-result" aria-live="polite"><h3>Estimation des besoins</h3><span class="engrais-result-label">Quantité totale estimée</span><strong class="engrais-result-value" id="engrais-kg">— kg</strong><div class="engrais-result-grid"><div class="engrais-result-stat"><strong id="engrais-sacs">—</strong><span>Sacs entiers à prévoir</span></div><div class="engrais-result-stat"><strong id="engrais-surface">— ha</strong><span>Superficie concernée</span></div></div><p id="engrais-summary" class="engrais-help" style="margin-top:14px">Renseignez les paramètres pour obtenir une estimation. Faites confirmer le produit et le dosage avant achat.</p></aside>
+    </div>
+  </section>
+  <details class="engrais-before"><summary>À vérifier avant l’achat</summary><div class="engrais-list"><div class="engrais-step"><strong>Culture et besoin</strong>Confirmez la dose avec une recommandation fiable.</div><div class="engrais-step"><strong>Produit et dosage</strong>Vérifiez la formule et respectez l’étiquette.</div><div class="engrais-step"><strong>Disponibilité</strong>Confirmez le prix et le conditionnement auprès du vendeur.</div></div></details>
+  <details class="engrais-note"><summary>À propos du calcul et des fournisseurs</summary><p>Le calcul est une estimation arithmétique, pas une recommandation agronomique. Les coordonnées et les prix ne sont affichés que lorsqu’ils sont vérifiés.</p></details>
+</main>
+<script>
+(() => {
+  const form = document.getElementById('fertilizer-calculator');
+  if (!form) return;
+  const byId = id => document.getElementById(id);
+  const fmt = n => new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 2}).format(n);
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const culture = byId('culture-engrais').value;
+    const surface = Number(byId('surface-engrais').value);
+    const dose = Number(byId('dose-engrais').value);
+    const sac = Number(byId('sac-engrais').value);
+    const error = byId('engrais-error');
+    if (!culture || !Number.isFinite(surface) || surface <= 0 || surface > 10000 || !Number.isFinite(dose) || dose <= 0 || !Number.isFinite(sac) || sac <= 0) {
+      error.textContent = 'Vérifiez la culture, une superficie comprise entre 0,01 et 10 000 ha, la dose validée et le poids du sac.';
+      return;
+    }
+    error.textContent = '';
+    const total = surface * dose;
+    byId('engrais-kg').textContent = fmt(total) + ' kg';
+    byId('engrais-sacs').textContent = String(Math.ceil(total / sac));
+    byId('engrais-surface').textContent = fmt(surface) + ' ha';
+    byId('engrais-summary').textContent = culture + ' : environ ' + fmt(total) + ' kg selon la dose saisie, soit ' + Math.ceil(total / sac) + ' sac(s) de ' + fmt(sac) + ' kg. Confirmez le dosage avec un professionnel.';
+  });
+})();
+</script>
+{% endblock %}

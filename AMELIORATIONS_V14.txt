@@ -1,0 +1,7 @@
+SAMOU MBEYMI V14 — améliorations ciblées
+- Ajout de photos illustratives dédiées à la carotte, au chou et au poivron dans Flutter.
+- La liste des récoltes associe désormais ces cultures à leur visuel dédié.
+- Écran Flutter Scanner IA modernisé : carte d’introduction vert profond, hiérarchie plus claire, étapes de sélection et photo.
+- Les récoltes et données métier existantes n’ont pas été modifiées intentionnellement.
+- Les visuels ajoutés sont générés à titre illustratif, pas des preuves photographiques de récoltes réelles.
+- Validation statique uniquement ; exécuter flutter analyze et tester l’application localement.

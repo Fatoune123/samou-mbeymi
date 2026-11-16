@@ -1,0 +1,38 @@
+RAPPORT DE CORRECTIONS — ASSISTANT AGRICOLE SAMOU MBEYMI
+Version de travail : amélioration ciblée des interactions vocales
+Date : 07/11/2026
+
+Périmètre modifié
+- backend_django/pertes/templates/pertes/base.html
+  * Séparation de la réponse de l'assistant et des messages techniques de microphone/voix.
+  * Affichage propre de la question et de la réponse dans une zone dédiée.
+  * Reconnaissance vocale avec résultats intermédiaires, arrêt propre et messages d'erreur ciblés.
+  * Utilisation du code de langue vocale déclaré dans la liste de langues.
+  * Chargement différé des voix de synthèse lorsque le navigateur les expose après l'initialisation.
+  * Aucune substitution silencieuse vers une autre langue.
+- backend_django/pertes/templates/pertes/assistant_agricole.html
+  * Gestion plus robuste du démarrage/arrêt du microphone.
+  * Messages plus précis pour refus d'autorisation, absence de parole, microphone absent, réseau et langue non prise en charge.
+  * Chargement différé des voix TTS et arrêt de l'écoute lors d'un changement de langue.
+- app_flutter/lib/screens/assistant_vocal_screen.dart
+  * Recherche de la langue installée par code exact ou variante régionale de la même langue.
+  * Aucune substitution vers une langue différente.
+
+Protection des données
+- Aucun modèle Django, champ, migration, URL métier, donnée utilisateur ou compte n'a été modifié.
+- backend_django/db.sqlite3 est strictement identique à l'archive d'origine.
+- Le fichier .env est inchangé.
+- Les fichiers de migrations sont inchangés.
+
+Limites techniques à connaître
+- Le code du navigateur ne peut pas ajouter lui-même une langue à la reconnaissance vocale native SpeechRecognition.
+- Pour le Sérère Sine, Joola, Mandinka et Soninké, le microphone ne pourra transcrire la parole que si le navigateur/appareil ou un service de reconnaissance vocale distant prend réellement ces langues en charge.
+- La synthèse vocale nécessite une voix installée compatible. Si elle manque, la réponse écrite reste affichée et aucune autre langue n'est utilisée à sa place.
+- Les changements ont été vérifiés statiquement (syntaxe JavaScript et intégrité de la base). Ils n'ont pas été testés sur le navigateur, le microphone et les appareils physiques de l'utilisateur.
+- Pour obtenir une vraie reconnaissance des langues locales non prises en charge par le navigateur, une prochaine étape devra intégrer un moteur STT compatible, sans modifier le schéma de la base de données.
+
+Tests effectués
+- Archive source valide.
+- Syntaxe JavaScript du widget global : OK (Node --check).
+- Syntaxe JavaScript de la page assistant : OK (Node --check).
+- Comparaison SHA-256 de db.sqlite3 avant/après : identique.

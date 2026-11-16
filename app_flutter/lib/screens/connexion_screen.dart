@@ -65,9 +65,18 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                       gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryLight]),
                       borderRadius: BorderRadius.circular(30),
                     ),
-                    child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
-                        CircleAvatar(backgroundColor: Color(0x22FFFFFF), child: Icon(Icons.eco_rounded, color: AppColors.accent)),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.asset(
+                            'assets/images/logo-samou-mbeymi.png',
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.agriculture_rounded, color: Colors.white, size: 42),
+                          ),
+                        ),
                         SizedBox(width: 12),
                         Text('SAMOU MBEYMI', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                       ]),

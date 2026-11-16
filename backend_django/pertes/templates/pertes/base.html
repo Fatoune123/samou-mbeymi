@@ -1,14 +1,513 @@
 {% load static %}
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{% block title %}Samou Mbeymi{% endblock %}</title><meta name="description" content="Samou Mbeymi — plateforme intelligente de suivi des récoltes et réduction des pertes agricoles."><link rel="stylesheet" href="{% static 'css/style.css' %}?v=8"></head>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{% block title %}Samou Mbeymi{% endblock %}</title>
+    <meta name="description" content="Samou Mbeymi : plateforme intelligente de suivi des récoltes et de réduction des pertes agricoles.">
+
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=12">
+
+    <style>
+        /* Navigation groupée, avec menus utilisables à la souris et au clavier. */
+        .navbar .wrap { width:min(1600px,calc(100% - 32px)); min-height:72px; height:auto; padding:8px 0; align-items:center; gap:16px; }
+        .nav-links { display:flex; align-items:center; justify-content:flex-end; flex:1 1 auto; gap:4px; min-width:0; }
+        .nav-links > a, .nav-links > details > summary, .nav-links button { color:#e9f4ef; border:0; background:transparent; padding:10px 9px; border-radius:10px; font:600 12px/1.3 'DM Sans',Arial,sans-serif; white-space:nowrap; cursor:pointer; list-style:none; }
+        .nav-links > a:hover, .nav-links > details > summary:hover, .nav-links button:hover { background:rgba(255,255,255,.10); }
+        .nav-group { position:relative; }
+        .nav-group summary::-webkit-details-marker { display:none; }
+        .nav-dropdown { position:absolute; top:calc(100% + 8px); left:0; min-width:190px; padding:7px; border:1px solid #dce9e1; border-radius:13px; background:#fff; color:#173d32; box-shadow:0 14px 32px #0002; display:grid; gap:3px; z-index:100; }
+        .nav-dropdown a, .nav-dropdown button { display:block; width:100%; text-align:left; color:#173d32!important; padding:11px 12px!important; border-radius:8px!important; font-size:12px!important; }
+        .nav-dropdown a:hover, .nav-dropdown button:hover { background:#edf7f1!important; }
+        .nav-dropdown form { margin:0; }
+        .nav-dropdown-right { left:auto; right:0; }
+        .mobile-menu { flex:0 0 auto; }
+        @media(max-width:1100px) { .navbar .wrap { flex-wrap:wrap; } .nav-links { flex-wrap:wrap; } }
+        @media(max-width:700px) {
+            .navbar .wrap { width:calc(100% - 24px); flex-wrap:wrap; }
+            .mobile-menu { display:block; }
+            .nav-links { display:none; width:100%; flex:1 0 100%; align-items:stretch; flex-direction:column; gap:3px; padding:8px 0 12px; }
+            .nav-links.open { display:flex; }
+            .nav-links > a, .nav-links > details > summary { display:block; width:100%; padding:12px!important; }
+            .nav-dropdown, .nav-dropdown-right { position:static; min-width:0; margin:3px 0 5px 10px; box-shadow:none; background:#f5faf6; }
+            .nav-dropdown a, .nav-dropdown button { white-space:normal; }
+        }
+        #sm-voice-launch {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 9999;
+            border: 0;
+            border-radius: 30px;
+            padding: 14px 19px;
+            background: #f2b84b;
+            color: #103f32;
+            font-weight: 800;
+            box-shadow: 0 8px 28px #0003;
+            cursor: pointer;
+        }
+
+        #sm-voice-panel {
+            position: fixed;
+            right: 22px;
+            bottom: 82px;
+            z-index: 9999;
+            width: min(390px, calc(100vw - 28px));
+            max-height: 75vh;
+            overflow-y: auto;
+            box-sizing: border-box;
+            background: #fff;
+            color: #173d32;
+            border: 1px solid #d7e5dc;
+            border-radius: 18px;
+            box-shadow: 0 12px 40px #0003;
+            padding: 18px;
+            display: none;
+            font: 14px/1.6 Arial, sans-serif;
+        }
+
+        #sm-voice-panel.open {
+            display: block;
+        }
+
+        #sm-voice-panel h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        #sm-voice-question {
+            box-sizing: border-box;
+            width: 100%;
+            border: 1px solid #cbd9d0;
+            border-radius: 10px;
+            padding: 10px;
+            font: inherit;
+            resize: vertical;
+        }
+
+        .sm-voice-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .sm-voice-actions button,
+        .sm-voice-actions select {
+            border: 0;
+            border-radius: 9px;
+            padding: 10px 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .sm-voice-start {
+            background: #125342;
+            color: #fff;
+        }
+
+        .sm-voice-close {
+            background: #edf3ef;
+            color: #173d32;
+        }
+
+        #sm-voice-status {
+            margin-top: 12px;
+            background: #f2f7f3;
+            border-radius: 10px;
+            padding: 12px;
+            min-height: 48px;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+        #sm-voice-status p {
+            margin: 8px 0;
+        }
+
+        #sm-voice-status ul {
+            padding-left: 22px;
+        }
+
+        #sm-voice-status button {
+            cursor: pointer;
+        }
+
+        .sm-voice-actions button:disabled {
+            opacity: .6;
+            cursor: wait;
+        }
+
+        @media (max-width: 600px) {
+            #sm-voice-launch {
+                right: 12px;
+                bottom: 12px;
+            }
+
+            #sm-voice-panel {
+                right: 10px;
+                bottom: 72px;
+            }
+        }
+    </style>
+</head>
+
 <body>
-<header class="navbar"><div class="wrap">
-<a class="brand" href="{% url 'accueil' %}"><span class="brand-mark">🌱</span><span>Samou <strong style="color:#f2b84b">Mbeymi</strong></span></a>
-<nav class="nav-links">
-<a href="{% url 'accueil' %}">Accueil</a>
-{% if user.is_authenticated %}<a href="{% url 'tableau_bord' %}">Tableau de bord</a><a href="{% url 'liste_recoltes' %}">Récoltes</a><a href="{% url 'liste_pertes' %}">Pertes</a><a href="{% url 'prediction_risque' %}">Prédiction</a><a href="{% url 'scanner_recolte' %}">IA</a><a href="{% url 'liste_stockages' %}">Stockage</a><a href="{% url 'localisation' %}">Localisation</a><a href="{% url 'rapport' %}">Rapports</a><form action="{% url 'deconnexion' %}" method="post" style="display:inline">{% csrf_token %}<button type="submit">Déconnexion</button></form>{% else %}<a href="{% url 'connexion' %}">Connexion</a><a class="nav-cta" href="{% url 'inscription' %}">Créer un compte</a>{% endif %}
-</nav><button class="mobile-menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
-</div></header>
-{% if messages %}<div class="wrap messages">{% for message in messages %}<div class="{{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+
+<header class="navbar">
+    <div class="wrap">
+
+        <a class="brand" href="{% url 'accueil' %}">
+            <span class="brand-mark">
+                <img src="{% static 'img/logo-emblem.png' %}"
+                     alt="Logo Samou Mbeymi" width="44" height="44">
+            </span>
+            <span>Samou <strong style="color:#f2b84b">Mbeymi</strong></span>
+        </a>
+
+        <nav class="nav-links" aria-label="Navigation principale">
+            <a href="{% url 'accueil' %}">Accueil</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'tableau_bord' %}">Tableau de bord</a>
+                <a href="{% url 'liste_recoltes' %}">Récoltes</a>
+                <a href="{% url 'liste_pertes' %}">Pertes</a>
+                <a href="{% url 'liste_stockages' %}">Stockage</a>
+                <a href="{% url 'rapport' %}">Rapports</a>
+                <details class="nav-group"><summary>Mon compte <span aria-hidden="true">⌄</span></summary><div class="nav-dropdown nav-dropdown-right">
+                    <form action="{% url 'deconnexion' %}" method="post">{% csrf_token %}<button type="submit">Déconnexion</button></form>
+                </div></details>
+            {% else %}
+                <a href="{% url 'connexion' %}">Connexion</a>
+                <a class="nav-cta" href="{% url 'inscription' %}">Créer un compte</a>
+            {% endif %}
+        </nav>
+        <button class="mobile-menu" type="button"
+                aria-label="Ouvrir le menu"
+                onclick="const nav=document.querySelector('.nav-links'); nav.classList.toggle('open'); this.setAttribute('aria-expanded', nav.classList.contains('open') ? 'true' : 'false')" aria-expanded="false">
+            ☰
+        </button>
+    </div>
+</header>
+
+{% if messages %}
+<div class="wrap messages">
+    {% for message in messages %}
+        <div class="{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
 {% block content %}{% endblock %}
-<footer class="footer"><div class="wrap"><div><strong>Samou Mbeymi</strong><br><span>Récolter mieux · perdre moins · décider avec les données</span></div><span>Projet de fin d'études · 2026</span></div></footer>
-</body></html>
+
+
+<!-- Assistant agricole global : questions agricoles écrites ou dictées, réponses via Django -->
+<button id="sm-voice-launch" type="button" aria-controls="sm-voice-panel" aria-expanded="false">
+    Assistant agricole
+</button>
+<form id="sm-voice-csrf" hidden>{% csrf_token %}</form>
+<section id="sm-voice-panel" role="dialog" aria-modal="false" aria-labelledby="sm-voice-title">
+    <h3 id="sm-voice-title">SAMOU MBEY — Assistant agricole</h3>
+    <p>Posez une question agricole à voix haute ou écrivez-la. Les questions hors agriculture sont refusées.</p>
+    <label for="sm-voice-language">Langue de réponse</label>
+    <select id="sm-voice-language" style="width:100%;margin:6px 0 10px;padding:10px;border:1px solid #cbd9d0;border-radius:9px">
+        <option value="fr-FR" data-speech="fr-FR">Français</option>
+        <option value="wo-SN" data-speech="wo-SN">Wolof</option>
+        <option value="ff" data-speech="ff-SN">Pulaar (Peul)</option>
+        <option value="srr" data-speech="srr-SN">Sérère (Sereer)</option>
+        <option value="dyo" data-speech="dyo-SN">Joola (Diola)</option>
+        <option value="mnk" data-speech="mnk-SN">Mandinka</option>
+        <option value="snk" data-speech="snk-SN">Soninké</option>
+        <option value="en-US" data-speech="en-US">English</option>
+    </select>
+    <p style="font-size:12px;color:#52665b">Pour les langues locales, la question est transcrite par le service audio Gemini côté serveur. Le microphone enregistre uniquement pendant la prise de parole ; aucune transcription n’est enregistrée en base.</p>
+    <textarea id="sm-voice-question" rows="3" placeholder="Ex. : Comment conserver mes tomates après la récolte ?"></textarea>
+    <div class="sm-voice-actions">
+        <button class="sm-voice-start" id="sm-voice-mic" type="button">🎙 Parler</button>
+        <button class="sm-voice-start" id="sm-voice-send" type="button">Envoyer la question</button>
+        <button class="sm-voice-close" id="sm-voice-stop" type="button">Arrêter la voix</button>
+        <button class="sm-voice-close" id="sm-voice-close" type="button">Fermer</button>
+    </div>
+    <div id="sm-voice-answer" aria-live="polite" style="display:none;white-space:pre-wrap;margin-top:12px;padding:12px;border-radius:10px;background:#f0f6f2;color:#173b2d;line-height:1.55"></div>
+    <div id="sm-voice-status" role="status" aria-live="polite">Prêt. Autorisez le microphone lorsque le navigateur le demande.</div>
+</section>
+<script>
+(function () {
+    const launch = document.getElementById('sm-voice-launch');
+    const panel = document.getElementById('sm-voice-panel');
+    if (!launch || !panel) return;
+    const question = document.getElementById('sm-voice-question');
+    const language = document.getElementById('sm-voice-language');
+    const status = document.getElementById('sm-voice-status');
+    const answerBox = document.getElementById('sm-voice-answer');
+    const mic = document.getElementById('sm-voice-mic');
+    const send = document.getElementById('sm-voice-send');
+    const close = document.getElementById('sm-voice-close');
+    const stop = document.getElementById('sm-voice-stop');
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let recorder = null, recorderStream = null, recorderChunks = [], recorderTimer = null;
+    let busy = false;
+
+    function loadVoices() {
+        return new Promise(resolve => {
+            const synth = window.speechSynthesis;
+            if (!synth) return resolve([]);
+            const read = () => {
+                try { return synth.getVoices() || []; } catch (_) { return []; }
+            };
+            const initial = read();
+            if (initial.length) return resolve(initial);
+
+            let settled = false;
+            const finish = () => {
+                if (settled) return;
+                const voices = read();
+                if (voices.length) {
+                    settled = true;
+                    window.clearTimeout(timer);
+                    synth.removeEventListener?.('voiceschanged', onChanged);
+                    resolve(voices);
+                }
+            };
+            const onChanged = () => finish();
+            const timer = window.setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                synth.removeEventListener?.('voiceschanged', onChanged);
+                resolve(read());
+            }, 5000);
+            synth.addEventListener?.('voiceschanged', onChanged);
+            // Certains navigateurs ne déclenchent pas voiceschanged au premier chargement.
+            window.setTimeout(finish, 250);
+            window.setTimeout(finish, 1000);
+            window.setTimeout(finish, 2500);
+        });
+    }
+
+
+    async function transcribeLocalAudio(blob, langue, csrfToken) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) throw new Error("Traitement audio non pris en charge par ce navigateur.");
+        const ctx = new Ctx();
+        try {
+            const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
+            const rate = 16000;
+            const offline = new OfflineAudioContext(1, Math.ceil(decoded.duration * rate), rate);
+            const source = offline.createBufferSource(); source.buffer = decoded; source.connect(offline.destination); source.start(0);
+            const samples = (await offline.startRendering()).getChannelData(0);
+            const buffer = new ArrayBuffer(44 + samples.length * 2), view = new DataView(buffer);
+            const str = (o, v) => { for (let i=0;i<v.length;i++) view.setUint8(o+i,v.charCodeAt(i)); };
+            str(0,"RIFF"); view.setUint32(4,36+samples.length*2,true); str(8,"WAVE"); str(12,"fmt ");
+            view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true); view.setUint32(24,rate,true);
+            view.setUint32(28,rate*2,true); view.setUint16(32,2,true); view.setUint16(34,16,true); str(36,"data"); view.setUint32(40,samples.length*2,true);
+            for (let i=0;i<samples.length;i++){const v=Math.max(-1,Math.min(1,samples[i]));view.setInt16(44+i*2,v<0?v*32768:v*32767,true);}
+            const form=new FormData(); form.append("audio",new Blob([buffer],{type:"audio/wav"}),"question.wav"); form.append("langue",langue);
+            const response=await fetch("/api/ia/transcrire-audio/",{method:"POST",body:form,credentials:"same-origin",headers:{"X-CSRFToken":csrfToken||"","Accept":"application/json"}});
+            const data=await response.json(); if(!response.ok) throw new Error(data.detail||"Transcription audio impossible."); return data.transcription;
+        } finally { await ctx.close().catch(()=>{}); }
+    }
+
+
+    const LOCAL_LANGUAGES = new Set(["wo-SN","ff","srr","dyo","mnk","snk"]);
+    async function startLocalRecording() {
+        if(recorder||busy)return;
+        if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){setStatus("Enregistrement audio indisponible. Mettez Chrome à jour et autorisez le microphone.");return;}
+        try{
+            recorderStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});recorderChunks=[];
+            const mime=["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"].find(x=>MediaRecorder.isTypeSupported(x));recorder=new MediaRecorder(recorderStream,mime?{mimeType:mime}:undefined);
+            recorder.ondataavailable=e=>{if(e.data?.size)recorderChunks.push(e.data);};
+            recorder.onstop=async()=>{
+                const blob=new Blob(recorderChunks,{type:recorder?.mimeType||"audio/webm"});recorderStream?.getTracks().forEach(x=>x.stop());recorderStream=null;recorder=null;mic.textContent="🎙 Parler";
+                if(!blob.size){setStatus("Aucune parole enregistrée. Réessayez.");return;}
+                busy=true;mic.disabled=true;send.disabled=true;setStatus("Reconnaissance de la langue locale en cours…");
+                try{const csrf=document.querySelector("#sm-voice-csrf input[name=csrfmiddlewaretoken]")?.value||"";const transcript=await transcribeLocalAudio(blob,language.value,csrf);question.value=transcript;setStatus("Question reconnue : "+transcript+". Envoi…");busy=false;mic.disabled=false;send.disabled=false;send.click();}
+                catch(e){setStatus(e.message||"La parole n'a pas pu être reconnue.");}
+                finally{busy=false;mic.disabled=false;send.disabled=false;}
+            };
+            recorder.start(250);mic.textContent="⏹ Terminer";setStatus("Microphone actif. Parlez, puis cliquez de nouveau pour terminer.");recorderTimer=window.setTimeout(()=>{if(recorder?.state==="recording")recorder.stop();},20000);
+        }catch(e){recorderStream?.getTracks().forEach(x=>x.stop());recorderStream=null;setStatus("Microphone inaccessible : "+(e.message||"vérifiez les autorisations Chrome."));}
+    }
+
+    async function say(text) {
+        const synth = window.speechSynthesis;
+        if (!synth || typeof window.SpeechSynthesisUtterance !== 'function') {
+            setStatus('Ce navigateur ne possède pas de synthèse vocale. La réponse est affichée, mais ne peut pas être prononcée sur cet appareil.');
+            return false;
+        }
+        const selected = language.options[language.selectedIndex];
+        const requested = (selected.dataset.speech || language.value).toLowerCase().replace('_', '-');
+        const languagePrefix = requested.split('-')[0];
+        const voices = await loadVoices();
+        const voice = voices.find(v => (v.lang || '').toLowerCase().replace('_', '-') === requested)
+            || voices.find(v => (v.lang || '').toLowerCase().replace('_', '-').startsWith(languagePrefix + '-'))
+            || (languagePrefix === 'fr' ? voices.find(v => (v.lang || '').toLowerCase().startsWith('fr')) : null);
+        if (!voice) {
+            setStatus('Aucune voix installée pour ' + selected.text + '. Installez une voix de cette langue dans les paramètres de votre appareil. Aucune autre langue ne sera utilisée à sa place.');
+            return false;
+        }
+
+        synth.cancel();
+        synth.resume();
+        setStatus('SAMOU MBEYMI prononce sa réponse…');
+        return await new Promise(resolve => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = voice.lang || requested;
+            utterance.voice = voice;
+            utterance.rate = 0.88;
+            utterance.onstart = () => setStatus('SAMOU MBEYMI parle…');
+            utterance.onend = () => {
+                setStatus('Réponse prononcée.');
+                resolve(true);
+            };
+            utterance.onerror = event => {
+                setStatus('La synthèse vocale a échoué (' + (event.error || 'erreur inconnue') + '). Vérifiez les voix installées et le volume de l’appareil.');
+                resolve(false);
+            };
+            try {
+                synth.speak(utterance);
+                // Relance certains moteurs qui restent en pause après une annulation.
+                window.setTimeout(() => { if (synth.paused) synth.resume(); }, 300);
+            } catch (error) {
+                setStatus('Impossible de démarrer la synthèse vocale : ' + (error.message || 'erreur du navigateur'));
+                resolve(false);
+            }
+        });
+    }
+    function setStatus(text) { status.textContent = text; }
+    launch.addEventListener('click', () => {
+        const opened = panel.classList.toggle('open');
+        launch.setAttribute('aria-expanded', String(opened));
+        if (opened) question.focus();
+    });
+    close.addEventListener('click', () => {
+        panel.classList.remove('open');
+        launch.setAttribute('aria-expanded', 'false');
+        if (recognition) recognition.stop();
+        if (recorder?.state === 'recording') recorder.stop();
+    });
+    stop.addEventListener('click', () => {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        setStatus('Lecture vocale arrêtée.');
+    });
+    mic.addEventListener('click', () => {
+        if(LOCAL_LANGUAGES.has(language.value)){if(recorder?.state==='recording'){window.clearTimeout(recorderTimer);recorder.stop();}else startLocalRecording();return;}
+        if (!Recognition) {
+            setStatus('La reconnaissance vocale n’est pas prise en charge par ce navigateur. Vous pouvez écrire votre question.');
+            return;
+        }
+        if (recognition) {
+            recognition.stop();
+            return;
+        }
+        const activeRecognition = new Recognition();
+        recognition = activeRecognition;
+        const selected = language.options[language.selectedIndex];
+        activeRecognition.lang = selected.dataset.speech || language.value;
+        activeRecognition.interimResults = true;
+        activeRecognition.continuous = false;
+        activeRecognition.maxAlternatives = 1;
+        activeRecognition.onstart = () => setStatus('Microphone actif. Parlez clairement…');
+        activeRecognition.onresult = (event) => {
+            let finalText = '';
+            let interimText = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0]?.transcript || '';
+                if (event.results[i].isFinal) finalText += transcript;
+                else interimText += transcript;
+            }
+            if (finalText.trim()) {
+                question.value = finalText.trim();
+                setStatus('Question reconnue. Envoi en cours…');
+                activeRecognition.stop();
+                send.click();
+            } else if (interimText) {
+                question.value = interimText;
+                setStatus('Reconnaissance en cours : ' + interimText);
+            }
+        };
+        activeRecognition.onerror = (event) => {
+            const errors = {
+                'not-allowed':'Accès au microphone refusé. Autorisez le microphone dans les paramètres du navigateur.',
+                'no-speech':'Aucune parole détectée. Réessayez en parlant près du microphone.',
+                'audio-capture':'Aucun microphone détecté. Vérifiez votre appareil.',
+                'network':'Le service vocal ne répond pas. Vérifiez votre connexion Internet.',
+                'language-not-supported':'Cette langue n’est pas prise en charge par le service vocal du navigateur.'
+            };
+            setStatus(errors[event.error] || ('Erreur microphone / reconnaissance : ' + event.error));
+        };
+        activeRecognition.onend = () => {
+            if (recognition === activeRecognition) recognition = null;
+        };
+        try { activeRecognition.start(); }
+        catch (error) {
+            if (recognition === activeRecognition) recognition = null;
+            setStatus('Impossible de démarrer le microphone. Vérifiez les autorisations du navigateur.');
+        }
+    });
+    language.addEventListener('change', () => {
+        if (recognition) { recognition.stop(); recognition = null; }
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        setStatus('Langue sélectionnée : ' + language.options[language.selectedIndex].text + '.');
+    });
+    send.addEventListener('click', async () => {
+        const text = question.value.trim();
+        if (!text || busy) { if (!text) setStatus('Écrivez ou dictez une question agricole.'); return; }
+        busy = true; send.disabled = true; mic.disabled = true;
+        setStatus('L’assistant agricole prépare une réponse…');
+        const controller = new AbortController();
+        const requestTimeout = window.setTimeout(() => controller.abort(), 65000);
+        try {
+            const response = await fetch('/api/ia/conseiller/', {
+                method: 'POST',
+                signal: controller.signal,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': document.querySelector('#sm-voice-csrf input[name="csrfmiddlewaretoken"]')?.value || ''
+                },
+                body: JSON.stringify({question: text, langue: language.value})
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.detail || 'Erreur du service assistant (' + response.status + ').');
+            const answer = (data.answer || data.reponse || '').trim();
+            if (!answer) throw new Error('Gemini n’a pas retourné de réponse.');
+            answerBox.style.display = 'block';
+            answerBox.textContent = 'Vous : ' + text + '\n\nAssistant : ' + answer;
+            setStatus('Réponse reçue.');
+            await say(answer);
+        } catch (error) {
+            const message = error.name === 'AbortError'
+                ? 'Le service agricole met trop de temps à répondre. Vérifiez la connexion puis réessayez.'
+                : (error.message || 'Impossible de joindre le conseiller agricole.');
+            setStatus(message);
+        } finally {
+            window.clearTimeout(requestTimeout);
+            busy = false; send.disabled = false; mic.disabled = false;
+        }
+    });
+    question.addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') send.click();
+    });
+})();
+</script>
+
+<footer class="footer">
+    <div class="wrap">
+        <div class="footer-brand">
+            <img src="{% static 'img/logo-emblem.png' %}"
+                 alt="" width="46" height="46">
+            <div>
+                <strong>Samou Mbeymi</strong><br>
+                <span>Récolter mieux · perdre moins · décider avec les données</span>
+            </div>
+        </div>
+        <span>Projet de fin d'études · 2026</span>
+    </div>
+</footer>
+
+
+</body>
+</html>

@@ -6,9 +6,11 @@ import '../theme.dart';
 import 'connexion_screen.dart';
 import 'recoltes_screen.dart';
 import 'pertes_screen.dart';
-import 'scanner_screen.dart';
 import 'profil_screen.dart';
 import 'outils_screen.dart';
+import 'analyse_ia_screen.dart';
+import 'scanner_screen.dart';
+import 'assistant_agricole_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -21,7 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _api = ApiService();
   int _currentIndex = 0;
 
-  final _titles = const ['Vue d’ensemble', 'Récoltes', 'Pertes', 'Scanner IA', 'Profil'];
+  final _titles = const ['Vue d’ensemble', 'Récoltes', 'Pertes', 'Pilotage', 'Profil'];
 
   @override
   Widget build(BuildContext context) {
@@ -29,24 +31,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _AccueilTab(api: _api, onNavigate: (i) => setState(() => _currentIndex = i)),
       const RecoltesScreen(embedded: true),
       const PertesScreen(embedded: true),
-      const ScannerScreen(embedded: true),
+      const OutilsScreen(),
       const ProfilScreen(),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 74,
+        toolbarHeight: 78,
         titleSpacing: 20,
         title: Row(
           children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(13),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'assets/images/logo-samou-mbeymi.png',
+                width: 48,
+                height: 48,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.agriculture_rounded),
               ),
-              child: const Icon(Icons.eco_rounded, color: AppColors.accent, size: 24),
             ),
             const SizedBox(width: 12),
             Column(
@@ -62,11 +65,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_horiz_rounded),
             onSelected: (value) {
-              if (value == 'outils') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OutilsScreen()));
               if (value == 'logout') _deconnexion();
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: 'outils', child: Text('Stockage & pilotage')),
               PopupMenuItem(value: 'logout', child: Text('Déconnexion')),
             ],
           ),
@@ -81,7 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           NavigationDestination(icon: Icon(Icons.grid_view_rounded), selectedIcon: Icon(Icons.grid_view_rounded), label: 'Accueil'),
           NavigationDestination(icon: Icon(Icons.grass_outlined), selectedIcon: Icon(Icons.grass_rounded), label: 'Récoltes'),
           NavigationDestination(icon: Icon(Icons.warning_amber_rounded), selectedIcon: Icon(Icons.warning_rounded), label: 'Pertes'),
-          NavigationDestination(icon: Icon(Icons.center_focus_weak_rounded), selectedIcon: Icon(Icons.center_focus_strong_rounded), label: 'Scanner IA'),
+          NavigationDestination(icon: Icon(Icons.assessment_outlined), selectedIcon: Icon(Icons.assessment_rounded), label: 'Pilotage'),
           NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Profil'),
         ],
       ),
@@ -154,10 +155,118 @@ class _AccueilTabState extends State<_AccueilTab> {
       onRefresh: _charger,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 10, 18, 28),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
         children: [
-          _HeroCard(data: d),
+          Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1480), child: _HeroCard(data: d))),
+          const SizedBox(height: 16),
+          _QuickActions(onPilotage: () => widget.onNavigate(3), onRecolte: () => widget.onNavigate(1), onPerte: () => widget.onNavigate(2)),
+          const SizedBox(height: 14),
+          Card(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AnalyseIARisqueScreen()),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46, height: 46,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: const Icon(Icons.auto_awesome, color: AppColors.primary),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Analyse intelligente', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                          SizedBox(height: 4),
+                          Text('Évaluer le risque de pertes d’une récolte', style: TextStyle(color: AppColors.inkSoft, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Outils intelligents', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Des outils complémentaires pour accompagner vos récoltes.',
+                    style: TextStyle(color: AppColors.inkSoft, fontSize: 12),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const ScannerScreen()),
+                          ),
+                          icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                          label: const Text('Analyser une photo'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => AssistantAgricoleScreen(
+                              onNavigate: (destination) => widget.onNavigate(destination == 5 ? 4 : destination),
+                            )),
+                          ),
+                          icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                          label: const Text('Assistant agricole'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AssistantAgricoleScreen(
+                            onNavigate: (destination) {
+                              if (destination == 0) {
+                                widget.onNavigate(0);
+                              } else if (destination == 1 || destination == 2) {
+                                widget.onNavigate(destination);
+                              } else if (destination == 5) {
+                                widget.onNavigate(4);
+                              } else {
+                                widget.onNavigate(3);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.mic_rounded),
+                      label: const Text('Assistant agricole — poser une question'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 18),
+          const Text('Vos indicateurs', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.ink)),
+          const SizedBox(height: 10),
           LayoutBuilder(
             builder: (context, constraints) {
               final columns = constraints.maxWidth > 680 ? 4 : 2;
@@ -165,14 +274,14 @@ class _AccueilTabState extends State<_AccueilTab> {
                 crossAxisCount: columns,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: columns == 4 ? 1.45 : 1.35,
+                crossAxisSpacing: 14,
+                mainAxisSpacing: 14,
+                childAspectRatio: columns == 4 ? 1.85 : 1.28,
                 children: [
                   _MetricCard(icon: Icons.grass_rounded, label: 'Récoltes', value: '${d.nbRecoltes}', color: AppColors.primary),
                   _MetricCard(icon: Icons.scale_rounded, label: 'Récolté', value: _kg(d.totalRecolteKg), color: AppColors.accent),
                   _MetricCard(icon: Icons.remove_circle_outline_rounded, label: 'Perdu', value: _kg(d.totalPerteKg), color: AppColors.loss),
-                  _MetricCard(icon: Icons.warning_amber_rounded, label: 'Taux de perte', value: '${d.tauxPerte.toStringAsFixed(1)}%', color: statusColor),
+                  _MetricCard(icon: Icons.pie_chart_rounded, label: 'Taux de perte', value: '${d.tauxPerte.toStringAsFixed(1)}%', color: AppColors.info),
                 ],
               );
             },
@@ -220,8 +329,6 @@ class _AccueilTabState extends State<_AccueilTab> {
           _EvolutionCard(data: d),
           const SizedBox(height: 18),
           _LossCausesCard(data: d),
-          const SizedBox(height: 18),
-          _QuickActions(onScanner: () => widget.onNavigate(3), onRecolte: () => widget.onNavigate(1), onPerte: () => widget.onNavigate(2)),
         ],
       ),
     );
@@ -237,42 +344,49 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.primary, AppColors.primaryLight]),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .18), blurRadius: 25, offset: const Offset(0, 10))],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(99)),
-                  child: const Text('TABLEAU DE BORD AGRICOLE', style: TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                ),
-                const SizedBox(height: 14),
-                const Text('Bonjour 👋', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                const SizedBox(height: 3),
-                const Text('Gardons chaque kilo sous contrôle.', style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900, height: 1.15)),
-                const SizedBox(height: 10),
-                Text('${data.nbPertes} signalement${data.nbPertes > 1 ? 's' : ''} enregistré${data.nbPertes > 1 ? 's' : ''}', style: const TextStyle(color: Color(0xFFD7E8DF), fontSize: 12)),
-              ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+        final icon = Container(
+          width: compact ? 52.0 : 66.0,
+          height: compact ? 52.0 : 66.0,
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), shape: BoxShape.circle),
+          child: Icon(Icons.agriculture_rounded, size: compact ? 28 : 34, color: AppColors.accent),
+        );
+        final text = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(99)),
+              child: const Text('TABLEAU DE BORD AGRICOLE', style: TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .7)),
             ),
+            const SizedBox(height: 13),
+            const Text('Bonjour 👋', style: TextStyle(color: Colors.white70, fontSize: 14)),
+            const SizedBox(height: 4),
+            const Text('Gardons chaque kilo sous contrôle.', style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900, height: 1.15)),
+            const SizedBox(height: 9),
+            Text('${data.nbPertes} signalement${data.nbPertes > 1 ? 's' : ''} enregistré${data.nbPertes > 1 ? 's' : ''}', style: const TextStyle(color: Color(0xFFD7E8DF), fontSize: 12)),
+          ],
+        );
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(compact ? 18 : 24),
+          decoration: BoxDecoration(
+            image: const DecorationImage(
+              image: AssetImage('assets/images/hero-banner.png'),
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              colorFilter: ColorFilter.mode(Color(0x66052E24), BlendMode.darken),
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .16), blurRadius: 22, offset: const Offset(0, 8))],
           ),
-          const SizedBox(width: 16),
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: .10), shape: BoxShape.circle),
-            child: const Icon(Icons.agriculture_rounded, size: 36, color: AppColors.accent),
-          ),
-        ],
-      ),
+          child: compact
+              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Align(alignment: Alignment.topRight, child: icon), const SizedBox(height: 4), text])
+              : Row(children: [Expanded(child: text), const SizedBox(width: 20), icon]),
+        );
+      },
     );
   }
 }
@@ -288,13 +402,13 @@ class _MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
           Container(width: 34, height: 34, decoration: BoxDecoration(color: color.withValues(alpha: .10), borderRadius: BorderRadius.circular(11)), child: Icon(icon, color: color, size: 19)),
-          const SizedBox(height: 10),
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+          const SizedBox(height: 8),
+          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.inkSoft, fontWeight: FontWeight.w600)),
+          Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, height: 1.15, color: AppColors.inkSoft, fontWeight: FontWeight.w600)),
         ]),
       ),
     );
@@ -320,17 +434,95 @@ class _AlertsCard extends StatelessWidget {
 class _EvolutionCard extends StatelessWidget {
   final TableauBord data;
   const _EvolutionCard({required this.data});
-  @override Widget build(BuildContext context) {
-    final pts=data.evolutionMensuelle;
-    if(pts.isEmpty)return const SizedBox.shrink();
-    return Card(child:Padding(padding:const EdgeInsets.fromLTRB(18,18,18,12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      const Text('Évolution de l’activité',style:TextStyle(fontWeight:FontWeight.w900,fontSize:16)),
-      const SizedBox(height:4),const Text('Production et pertes sur les 12 derniers mois.',style:TextStyle(color:AppColors.inkSoft,fontSize:12)),
-      const SizedBox(height:18),SizedBox(height:220,child:LineChart(LineChartData(minY:0,maxY:100,gridData:FlGridData(show:true,drawVerticalLine:false,horizontalInterval:25,getDrawingHorizontalLine:(_)=>FlLine(color:AppColors.border,strokeWidth:.7)),borderData:FlBorderData(show:false),titlesData:FlTitlesData(leftTitles:AxisTitles(sideTitles:SideTitles(showTitles:true,reservedSize:32,getTitlesWidget:(v,m)=>Text('${v.toInt()}%',style:const TextStyle(fontSize:9,color:AppColors.inkSoft)))),rightTitles:const AxisTitles(sideTitles:SideTitles(showTitles:false)),topTitles:const AxisTitles(sideTitles:SideTitles(showTitles:false)),bottomTitles:AxisTitles(sideTitles:SideTitles(showTitles:true,interval:2,getTitlesWidget:(v,m){final i=v.toInt();if(i<0||i>=pts.length)return const SizedBox.shrink();return Padding(padding:const EdgeInsets.only(top:7),child:Text(pts[i].mois,style:const TextStyle(fontSize:8,color:AppColors.inkSoft)));})),lineBarsData:[LineChartBarData(spots:[for(int i=0;i<pts.length;i++)FlSpot(i.toDouble(),pts[i].productionPct)],isCurved:true,barWidth:3,color:AppColors.primary,dotData:const FlDotData(show:false)),LineChartBarData(spots:[for(int i=0;i<pts.length;i++)FlSpot(i.toDouble(),pts[i].pertePct)],isCurved:true,barWidth:3,color:AppColors.loss,dotData:const FlDotData(show:false))])))),
-      const SizedBox(height:8),const Row(mainAxisAlignment:MainAxisAlignment.center,children:[_LegendDot(color:AppColors.primary,label:'Production'),SizedBox(width:18),_LegendDot(color:AppColors.loss,label:'Pertes')])
-    ])));
+
+  @override
+  Widget build(BuildContext context) {
+    final pts = data.evolutionMensuelle;
+    if (pts.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Évolution de l’activité', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            const SizedBox(height: 4),
+            const Text('Production et pertes sur les 12 derniers mois.', style: TextStyle(color: AppColors.inkSoft, fontSize: 12)),
+            const SizedBox(height: 18),
+            SizedBox(
+              height: 220,
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
+                  maxY: 100,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: 25,
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppColors.border, strokeWidth: .7),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: const TextStyle(fontSize: 9, color: AppColors.inkSoft)),
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 2,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index < 0 || index >= pts.length) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 7),
+                            child: Text(pts[index].mois, style: const TextStyle(fontSize: 8, color: AppColors.inkSoft)),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: [for (int i = 0; i < pts.length; i++) FlSpot(i.toDouble(), pts[i].productionPct)],
+                      isCurved: true,
+                      barWidth: 3,
+                      color: AppColors.primary,
+                      dotData: const FlDotData(show: false),
+                    ),
+                    LineChartBarData(
+                      spots: [for (int i = 0; i < pts.length; i++) FlSpot(i.toDouble(), pts[i].pertePct)],
+                      isCurved: true,
+                      barWidth: 3,
+                      color: AppColors.loss,
+                      dotData: const FlDotData(show: false),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _LegendDot(color: AppColors.primary, label: 'Production'),
+                SizedBox(width: 18),
+                _LegendDot(color: AppColors.loss, label: 'Pertes'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
+
 class _LegendDot extends StatelessWidget{final Color color;final String label;const _LegendDot({required this.color,required this.label});@override Widget build(BuildContext c)=>Row(children:[Container(width:8,height:8,decoration:BoxDecoration(color:color,shape:BoxShape.circle)),const SizedBox(width:5),Text(label,style:const TextStyle(fontSize:10,color:AppColors.inkSoft))]);}
 
 class _LossCausesCard extends StatelessWidget {
@@ -372,10 +564,10 @@ class _LossCausesCard extends StatelessWidget {
 }
 
 class _QuickActions extends StatelessWidget {
-  final VoidCallback onScanner;
+  final VoidCallback onPilotage;
   final VoidCallback onRecolte;
   final VoidCallback onPerte;
-  const _QuickActions({required this.onScanner, required this.onRecolte, required this.onPerte});
+  const _QuickActions({required this.onPilotage, required this.onRecolte, required this.onPerte});
 
   @override
   Widget build(BuildContext context) {
@@ -383,7 +575,7 @@ class _QuickActions extends StatelessWidget {
       const Text('Actions rapides', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
       const SizedBox(height: 12),
       Row(children: [
-        Expanded(child: _Action(icon: Icons.center_focus_strong_rounded, title: 'Scanner IA', subtitle: 'Analyser', color: AppColors.primary, onTap: onScanner)),
+        Expanded(child: _Action(icon: Icons.assessment_outlined, title: 'Pilotage', subtitle: 'Consulter', color: AppColors.primary, onTap: onPilotage)),
         const SizedBox(width: 10),
         Expanded(child: _Action(icon: Icons.add_circle_outline_rounded, title: 'Récolte', subtitle: 'Ajouter', color: AppColors.success, onTap: onRecolte)),
         const SizedBox(width: 10),
@@ -404,14 +596,14 @@ class _Action extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      color: color == AppColors.loss ? AppColors.lossSoft : color == AppColors.accent ? AppColors.accentSoft : color == AppColors.info ? AppColors.infoSoft : AppColors.successSoft,
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.border)),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withValues(alpha: .13)),),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(icon, color: color, size: 23),
             const SizedBox(height: 9),

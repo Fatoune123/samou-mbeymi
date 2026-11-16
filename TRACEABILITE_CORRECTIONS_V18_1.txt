@@ -1,0 +1,23 @@
+SAMOU MBEYMI — CORRECTIONS TRAÇABILITÉ (V18.1)
+
+Modifications apportées au code :
+- La fiche détail d'une récolte affiche désormais la référence du lot SMB-AAAA-00000 (référence calculée de façon stable à partir de la date et de l'identifiant de la récolte ; aucune colonne supplémentaire n'est ajoutée).
+- La fiche affiche quantité initiale, pertes cumulées, quantité restante estimée et lieu actuel.
+- La fiche affiche l'historique chronologique des événements de traçabilité.
+- Un formulaire permet d'ajouter un événement de type Contrôle ou Autre observation.
+- Le bloc de prédiction IA a été retiré de cette fiche pour respecter le périmètre recentré.
+- Le signal Django enregistre désormais séparément un changement de lieu ET un changement de quantité effectués dans la même sauvegarde.
+- Des tests ont été ajoutés pour ces comportements.
+
+IMPORTANT — DÉMARRAGE :
+1. Faire une copie de backend_django/db.sqlite3 avant toute opération.
+2. Dans backend_django, activer l'environnement virtuel habituel.
+3. Exécuter : python manage.py migrate
+   La migration 0005_evenement_traceabilite doit être appliquée pour créer la table d'historique.
+4. Exécuter : python manage.py test pertes
+5. Démarrer : python manage.py runserver
+
+Aucune migration nouvelle n'est requise pour cette mise à jour (la référence de lot est une propriété calculée).
+La base SQLite fournie dans l'archive d'origine est conservée. Ne pas la supprimer.
+
+Limites de validation : la compilation syntaxique Python a été vérifiée dans l'environnement de préparation. Les commandes Django de vérification et les tests nécessitent Django et les dépendances du projet ; ils doivent être exécutés dans l'environnement Windows du projet.

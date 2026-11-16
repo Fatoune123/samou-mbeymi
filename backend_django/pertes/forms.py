@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from decimal import Decimal
+from django.db.models import Sum
 from .models import Agriculteur, Recolte, Perte, Culture, REGIONS_SENEGAL
 
 
@@ -29,11 +31,25 @@ class InscriptionForm(UserCreationForm):
 
 
 class RecolteForm(forms.ModelForm):
+    def clean_quantite_kg(self):
+        quantite = self.cleaned_data['quantite_kg']
+        if quantite <= 0:
+            raise forms.ValidationError('La quantité récoltée doit être supérieure à 0 kg.')
+        if self.instance and self.instance.pk:
+            pertes = self.instance.pertes.aggregate(total=Sum('quantite_perdue_kg'))['total'] or Decimal('0.00')
+            if pertes > quantite:
+                raise forms.ValidationError(
+                    f'Impossible de réduire la récolte à {quantite} kg : {pertes} kg de pertes sont déjà enregistrées. Corrigez les pertes avant de réduire la quantité.'
+                )
+        return quantite
+
     class Meta:
         model = Recolte
         fields = ['culture', 'quantite_kg', 'date_recolte', 'lieu_stockage', 'notes']
         widgets = {
-            'date_recolte': forms.DateInput(attrs={'type': 'date'}),
+            'quantite_kg': forms.NumberInput(attrs={'min': '0.01', 'step': '0.01', 'placeholder': 'Ex. : 250'}),
+            'date_recolte': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'lieu_stockage': forms.TextInput(attrs={'list': 'lieux-stockage', 'placeholder': 'Ex. : Magasin, silo, entrepôt…', 'autocomplete': 'off'}),
             'notes': forms.Textarea(attrs={'rows': 3}),
         }
         labels = {
@@ -48,6 +64,7 @@ class PerteForm(forms.ModelForm):
         model = Perte
         fields = ['recolte', 'type_perte', 'quantite_perdue_kg', 'description', 'statut', 'photo']
         widgets = {
+            'quantite_perdue_kg': forms.NumberInput(attrs={'min': '0.01', 'step': '0.01'}),
             'description': forms.Textarea(attrs={'rows': 3}),
         }
         labels = {
@@ -64,9 +81,15 @@ class PerteForm(forms.ModelForm):
         recolte = cleaned.get('recolte')
         quantite = cleaned.get('quantite_perdue_kg')
         if recolte and quantite is not None:
-            current = sum(float(p.quantite_perdue_kg) for p in recolte.pertes.exclude(pk=self.instance.pk))
-            if current + float(quantite) > float(recolte.quantite_kg):
-                self.add_error('quantite_perdue_kg', 'La perte totale ne peut pas dépasser la quantité récoltée.')
+            current = recolte.pertes.exclude(pk=self.instance.pk).aggregate(
+                total=Sum('quantite_perdue_kg')
+            )['total'] or Decimal('0.00')
+            if current + quantite > recolte.quantite_kg:
+                disponible = recolte.quantite_kg - current
+                self.add_error(
+                    'quantite_perdue_kg',
+                    f'Quantité excessive. Il reste au maximum {disponible} kg déclarables pour ce lot.'
+                )
         return cleaned
 
 
@@ -79,5 +102,5 @@ class CultureForm(forms.ModelForm):
 class PredictionForm(forms.Form):
     culture = forms.ModelChoiceField(queryset=Culture.objects.all(), label="Culture")
     date_recolte = forms.DateField(label="Date prévue de récolte", widget=forms.DateInput(attrs={"type": "date"}))
-    quantite_kg = forms.DecimalField(label="Quantité prévue (kg)", min_value=0.01, max_digits=10, decimal_places=2)
+    quantite_kg = forms.DecimalField(label="Quantité prévue (kg)", min_value=Decimal("0.01"), max_digits=10, decimal_places=2, widget=forms.NumberInput(attrs={'min': '0.01', 'step': '0.01', 'placeholder': 'Ex. : 250'}))
     lieu_stockage = forms.CharField(label="Lieu / type de stockage", max_length=150, required=False, widget=forms.TextInput(attrs={"placeholder": "Entrepôt, silo, magasin…"}))

@@ -1,0 +1,22 @@
+SAMOU MBEYMI — NOTES DE MODERNISATION
+Version : 12
+Date : 26 octobre 2026
+
+MODIFICATIONS
+- Finition visuelle globale du site Django : états de focus visibles, transitions discrètes,
+  sélection de texte harmonisée et styles cohérents pour les tableaux et formulaires.
+- Amélioration de la lisibilité et de l'adaptation mobile des zones communes.
+- Respect de la préférence système « réduire les animations ».
+- Incrément de version du CSS dans le template de base afin d'éviter le cache navigateur.
+
+PROTECTION DES DONNÉES
+- Aucune migration Django n'a été modifiée.
+- Aucune donnée de base SQLite n'a été modifiée.
+- Aucun fichier .env n'a été modifié.
+- Aucun média ni identifiant n'a été modifié.
+- Aucune logique métier/API n'a été modifiée.
+
+IMPORTANT
+Ces changements sont une première passe visuelle prudente, pas une validation complète.
+Le démarrage Django/Flutter et les tests de non-régression doivent encore être exécutés
+sur votre ordinateur avant toute mise en production.

@@ -1,0 +1,4 @@
+# Dépendances supplémentaires du contrôle des photos par CLIP.
+# Installation volumineuse; nécessite Internet au premier lancement pour télécharger le modèle.
+transformers>=4.40,<5
+torch>=2.2

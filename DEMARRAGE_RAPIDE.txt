@@ -1,0 +1,30 @@
+SAMOU MBEYMI — DÉMARRAGE RAPIDE WINDOWS
+
+1) BACKEND DJANGO
+- Ouvrir CMD dans backend_django (le dossier avec manage.py)
+- Si besoin, créer l'environnement : py -3.12 -m venv .venv
+- Activer : .venv\Scripts\activate
+- Installer : python -m pip install -r requirements.txt
+- Configurer : copy .env.example .env (si .env n'existe pas déjà)
+- Vérifier : python manage.py check
+- Migrer : python manage.py migrate
+- Tester : python manage.py test pertes
+- Lancer : python manage.py runserver
+
+2) FLUTTER (deuxième terminal)
+- Ouvrir CMD dans app_flutter (dossier avec pubspec.yaml)
+- flutter pub get
+- flutter analyze
+- flutter run
+
+3) SCANNER IA (optionnel, téléchargement volumineux)
+Dans backend_django, avec .venv activé :
+python -m pip install -r requirements-vision.txt
+Le premier usage du modèle CLIP nécessite Internet et peut télécharger plusieurs centaines de Mo.
+
+4) ENDPOINTS
+- Santé API : http://127.0.0.1:8000/api/health/
+- Offres : http://127.0.0.1:8000/api/marketplace/offres/
+- Commandes (authentification requise) : http://127.0.0.1:8000/api/marketplace/commandes/
+
+Lire README_PROFESSIONNEL.md pour la configuration détaillée, les limitations et la préparation de la soutenance.

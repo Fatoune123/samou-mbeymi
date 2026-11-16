@@ -28,6 +28,17 @@ urlpatterns = [
     path('rapport/', views.rapport, name='rapport'),
     path('rapport/export/', views.export_rapport_csv, name='export_rapport_csv'),
     
+    path('assistant-agricole/', views.assistant_agricole_web, name='assistant_agricole_web'),
+
+    # Modules agricoles web complémentaires
+    path('conservation/', views.conservation_intelligente, name='conservation_intelligente'),
+    path('phytosanitaire/', views.assistant_phytosanitaire, name='assistant_phytosanitaire'),
+    path('engrais/', views.fournisseurs_engrais, name='fournisseurs_engrais'),
+    path('marketplace/', views.marketplace_agricole, name='marketplace_agricole'),
+    path('marketplace/publier/', views.publier_offre_marketplace, name='publier_offre_marketplace'),
+    path('marketplace/<int:pk>/commander/', views.commander_offre_marketplace, name='commander_offre_marketplace'),
+    path('marketplace/commandes/<int:pk>/statut/', views.changer_statut_commande_marketplace, name='changer_statut_commande_marketplace'),
+
     # Gestion des pertes
     path('pertes/', views.liste_pertes, name='liste_pertes'),
     path('pertes/signaler/', views.signaler_perte, name='signaler_perte'),
